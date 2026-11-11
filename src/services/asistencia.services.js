@@ -2,10 +2,20 @@ import mongoose from "mongoose";
 import AsistenciaModel, { TIPOS_NOVEDAD } from "../models/asistencia.model.js";
 import JustificacionModel from "../models/justificacion.model.js";
 import RendimientoModel from "../models/rendimiento.models.js";
-import { dbGetAtletas } from "./usuarios.services.js";
+import usuarioModel from "../models/usuarios.models.js";
 import { validarAccesoNivel } from "../helpers/acceso.helpers.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
 import { esFechaISO, hoyISO } from "../helpers/fecha.helpers.js";
+
+// Atletas activos de un nivel. Se consulta directo al modelo de usuarios
+// para no depender de funciones en usuarios.services.js
+const dbGetAtletas = async (nivel) => {
+    return await usuarioModel
+        .find({ rol: 'Atleta', nivel, status: true, estadoSolicitud: 'Aprobada' })
+        .select('nombre apellido codigo nivel')
+        .sort({ apellido: 1, nombre: 1 })
+        .lean();
+};
 
 // Mantiene coherente la justificación con la novedad de la asistencia
 const sincronizarJustificacion = async (asistencia, nuevoTipo, { motivo, revisorId } = {}) => {
@@ -54,8 +64,13 @@ const adjuntarJustificacion = async (asistencias) => {
 };
 
 //PENDIENTE POR CONECTAR CON EL MODELO DE HORARIO Y NIVEL
+// Mientras esos modelos no estén registrados en mongoose, estas funciones no fallan:
+// buscarHorario devuelve null y validarNivelActivo solo devuelve el id.
 // Sesión (Horario) activa del nivel en ese día. Horario.fecha es Date, así que se busca en todo el día UTC
 const buscarHorario = async (nivel, fecha) => {
+    const HorarioModel = mongoose.models.horario ?? mongoose.models.Horario;
+    if (!HorarioModel) return null;
+
     const inicio = new Date(`${fecha}T00:00:00.000Z`);
     const fin = new Date(inicio.getTime() + 24 * 60 * 60 * 1000);
     return await HorarioModel
@@ -65,6 +80,9 @@ const buscarHorario = async (nivel, fecha) => {
 };
 
 const validarNivelActivo = async (nivelId) => {
+    const NivelModel = mongoose.models.Nivel;
+    if (!NivelModel) return { _id: nivelId };
+
     const nivel = await NivelModel.findById(nivelId).lean();
     if (!nivel) throw errorHttp(404, 'El nivel no existe');
     if (nivel.estado !== 'Activo') throw errorHttp(400, 'El nivel está inactivo');
@@ -83,12 +101,14 @@ const dbGetAsistencia = async (query = {}, restriccion = {}) => {
         };
     }
 
-    const asistencias = await AsistenciaModel.find({ ...filtro, ...restriccion })
-        .populate('usuario', 'nombre apellido')
-        .populate('nivel', 'nombre imagenEntre estado')
-        .populate('horario', 'enfoque lugar tipo franjaInicio franjaFin')
-        .sort({ fecha: -1 })
-        .lean();
+    let consulta = AsistenciaModel.find({ ...filtro, ...restriccion })
+        .populate('usuario', 'nombre apellido');
+
+    // Solo se hace populate de los modelos que ya existen
+    if (mongoose.models.Nivel) consulta = consulta.populate('nivel', 'nombre imagenEntre estado');
+    if (mongoose.models.horario) consulta = consulta.populate('horario', 'enfoque lugar tipo franjaInicio franjaFin');
+
+    const asistencias = await consulta.sort({ fecha: -1 }).lean();
 
     return await adjuntarJustificacion(asistencias);
 };

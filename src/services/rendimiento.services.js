@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
 import RendimientoModel from "../models/rendimiento.models.js";
 import AsistenciaModel from "../models/asistencia.model.js";
-import HabilidadesModel from "../models/habilidades.model.js";
-import { dbGetAtletas } from "./usuarios.services.js";
+//import HabilidadesModel from "../models/habilidades.model.js";
+import { dbGetUsuario } from "./usuarios.services.js";
 import { validarAccesoAtleta, validarAccesoNivel } from "../helpers/acceso.helpers.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
 import { esFechaISO, fechaADate, hoyISO } from "../helpers/fecha.helpers.js";
@@ -75,7 +75,7 @@ const dbGetRendimientoAtleta = async (atletaId) => {
 
 // Lista de atletas con su % de rendimiento (tabla del admin). 
 const dbGetResumenRendimiento = async (nivel) => {
-    const atletas = await dbGetAtletas(nivel);
+    const atletas = await dbGetUsuario(nivel);
     const activas = await HabilidadesModel.distinct('_id', { estado: 'Activo' });
 
     const completadas = await RendimientoModel.aggregate([
