@@ -7,6 +7,13 @@ import perfilUsuarioRoute from './routes/perfilUsuario.routes.js'
 import authRoute from './routes/auth.routes.js'
 import path from 'node:path';
 
+//Rutas de Pagos 
+
+import pagosRouter from './routes/pagos.routes.js'; //EsModule
+import mensualidadRouter from './routes/mensualidades.routes.js'
+import PlanAsociadoRouter from './routes/planAsociado.routes.js';
+import MetodoPagoRouter from './routes/metodosPago.routes.js';
+
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
 
@@ -28,6 +35,12 @@ app.get('/health', (req, res) => {
     res.status(200).json({msg : 'Servidor de CheerClick esta funcionando!'})
 
 });
+
+//Enlazar todas las rutas de la aplicacion 
+app.use( '/api/pagos' , pagosRouter );
+app.use( '/api/mensualidades', mensualidadRouter);
+app.use( '/api/plan-asociado', PlanAsociadoRouter);
+app.use( '/api/metodo-pago', MetodoPagoRouter);
 
 //Enlazar todas las rutas de la aplicacion 
 app.use( '/api/usuarios' , usuariosRoute );
