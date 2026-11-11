@@ -7,6 +7,11 @@ import perfilUsuarioRoute from './routes/perfilUsuario.routes.js'
 import authRoute from './routes/auth.routes.js'
 import path from 'node:path';
 
+//Modulo Rendimiento
+import rendimientoRoute from './routes/rendimiento.routes.js';
+import asistenciaRoute from './routes/asistencia.routes.js';
+import justificacionRoute from './routes/justificacion.routes.js';
+
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
 
@@ -33,7 +38,11 @@ app.get('/health', (req, res) => {
 app.use( '/api/usuarios' , usuariosRoute );
 app.use( '/api/contactoemergencia' , contactoEmergenciaRoute);
 app.use( '/api/perfilusuario' , perfilUsuarioRoute) ;
-app.use( '/api/auth' , authRoute)
+app.use( '/api/auth' , authRoute);
+
+app.use( '/api/rendimiento' , rendimientoRoute );
+app.use( '/api/asistencia' , asistenciaRoute );
+app.use( '/api/justificacion' , justificacionRoute );
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
