@@ -11,7 +11,8 @@ import path from 'node:path';
 import rendimientoRoute from './routes/rendimiento.routes.js';
 import asistenciaRoute from './routes/asistencia.routes.js';
 import justificacionRoute from './routes/justificacion.routes.js';
-
+import habilidadRoute from './routes/habilidades.routes.js';
+import tipoHabilidadRoute from './routes/tipoHabilidad.routes.js';
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
 
@@ -43,6 +44,8 @@ app.use( '/api/auth' , authRoute);
 app.use( '/api/rendimiento' , rendimientoRoute );
 app.use( '/api/asistencia' , asistenciaRoute );
 app.use( '/api/justificacion' , justificacionRoute );
+app.use( '/api/habilidad', habilidadRoute);
+app.use( '/api/tipo-habilidad', tipoHabilidadRoute);
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
