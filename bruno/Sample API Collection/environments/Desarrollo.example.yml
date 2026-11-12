@@ -1,0 +1,5 @@
+﻿name: Desarrollo
+variables:
+  - name: token
+    value: ""
+    description: "Token obtenido al iniciar sesión"

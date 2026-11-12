@@ -1,7 +1,11 @@
 info:
   name: Contacto_Emergencia
   type: folder
+<<<<<<< HEAD
   seq: 3
+=======
+  seq: 2
+>>>>>>> 86ec7e94e99864f8c9581b061420607a36356b19
 
 request:
   auth: inherit

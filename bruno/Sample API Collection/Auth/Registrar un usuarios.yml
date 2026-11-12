@@ -1,0 +1,27 @@
+info:
+  name: Registrar un usuarios
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3000/api/auth/register
+  body:
+    type: json
+    data: |-
+      {
+        "nombre": "Eileen",
+        "apellido": "Morales",
+        "email": "Eileen@gmail.com",
+        "contrasena": "eilen123456",
+        "rol": "Administrador",
+        "status": true
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
