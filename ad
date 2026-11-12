@@ -1,0 +1,181 @@
+ .gitignore                                         |   4 [32m+[m[31m-[m
+ .../Asistencia/Actualizar asistencia.yml           |  25 [31m---[m
+ .../Asistencia/Eliminar Asistencia.yml             |  16 [31m--[m
+ bruno/Sample API Collection/Asistencia/Listar.yml  |  19 [31m--[m
+ .../Asistencia/Registrar asistencia.yml            |  27 [31m---[m
+ bruno/Sample API Collection/Asistencia/folder.yml  |   7 [31m-[m
+ .../Athentication/Login Usuario.yml                |  27 [31m---[m
+ .../Athentication/Verifica autenticacion.yml       |  29 [31m---[m
+ .../Sample API Collection/Athentication/folder.yml |   7 [31m-[m
+ .../Auth/Cambiar contrase\303\261a.yml"            |  25 [32m+++[m
+ .../Login de un usuario.yml}                       |   8 [32m+[m[31m-[m
+ .../Auth/Recuperar contrase\303\261a.yml"          |   8 [32m+[m[31m-[m
+ .../Registrar un usuarios.yml}                     |  11 [32m+[m[31m-[m
+ .../Auth/Verificar c\303\263digo.yml"              |  11 [32m+[m[31m-[m
+ .../{Niveles => Auth}/folder.yml                   |   2 [32m+[m[31m-[m
+ .../Competencias/Actualizar una competencia.yml    |  28 [31m---[m
+ .../Competencias/Eliminar una competencia.yml      |  16 [31m--[m
+ .../Competencias/Listar todas las competencias.yml |  16 [31m--[m
+ .../Competencias/Obtiene una competencia.yml       |  16 [31m--[m
+ .../Competencias/Registrar Competencias.yml        |  28 [31m---[m
+ .../Sample API Collection/Competencias/folder.yml  |   7 [31m-[m
+ .../Actualizar contacto de emergencia.yml          |  26 [31m---[m
+ .../Actualizar un contacto de emergencias.yml      |  28 [32m+++[m
+ .../Crear contacto de emergencia.yml               |  26 [31m---[m
+ .../Eliminar contacto de emergencia.yml            |  16 [31m--[m
+ .../Obtener contacto de emergencia.yml             |  16 [31m--[m
+ .../Obtener un contacto de emergencia.yml}         |  11 [32m+[m[31m-[m
+ .../Registrar un contacto de emergencia.yml        |  31 [32m+++[m
+ .../Contacto_Emergencia/folder.yml                 |   2 [32m+[m[31m-[m
+ bruno/Sample API Collection/Eps/Actualizar EPS.yml |  22 [31m--[m
+ .../Eps/Eiminar categoria por ID.yml               |  16 [31m--[m
+ bruno/Sample API Collection/Eps/folder.yml         |   7 [31m-[m
+ ...lizar todas las propiedades de los horarios.yml |  16 [31m--[m
+ ...lizar una o mas propiedades de los horarios.yml |  29 [31m---[m
+ .../Horarios/Elimina un horario.yml                |  16 [31m--[m
+ .../Horarios/Obtiene un horario.yml                |  16 [31m--[m
+ .../Horarios/Registrar horarios.yml                |  30 [31m---[m
+ bruno/Sample API Collection/Horarios/folder.yml    |   7 [31m-[m
+ .../ImplementoTalla/Actualizar.yml                 |  19 [31m--[m
+ .../ImplementoTalla/Crear.yml                      |  25 [31m---[m
+ .../Listar todas las opciones de talla.yml         |  16 [31m--[m
+ .../ImplementoTalla/Listar todas.yml               |  16 [31m--[m
+ .../Implementos/Crear Implementos.yml              |  26 [31m---[m
+ .../Implementos/Listar implementos.yml             |  16 [31m--[m
+ .../Actualiza una Inscripcion a Competencia.yml    |  24 [31m---[m
+ .../Consultar las Inscripciones a competencias.yml |  16 [31m--[m
+ ...imina una Inscripci\303\263n a competencia.yml" |  16 [31m--[m
+ .../Obtiene uan Inscripcion a competencia.yml      |  16 [31m--[m
+ .../Registrar una Inscripcion a competencia.yml    |  24 [31m---[m
+ .../Inscripciones_Competencias/folder.yml          |   7 [31m-[m
+ .../Justificaciones/Actualizar justificacion.yml   |  16 [31m--[m
+ .../Justificaciones/Eliminar justificacion.yml     |  16 [31m--[m
+ .../Justificaciones/Listar justtificaciones.yml    |  16 [31m--[m
+ .../Justificaciones/Registrar justificacion.yml    |  27 [31m---[m
+ .../Justificaciones/folder.yml                     |   7 [31m-[m
+ .../Niveles/Actualizar nivel.yml                   |  24 [31m---[m
+ .../Niveles/Consultar niveles.yml                  |  16 [31m--[m
+ .../Niveles/Elimina un nivel.yml                   |  16 [31m--[m
+ .../Niveles/Obtener un nivel.yml                   |  16 [31m--[m
+ .../Actualizar un perfil.yml}                      |  12 [32m+[m[31m-[m
+ .../Perfil_Usuario/CE agregado por admin.yml       |  28 [32m+++[m
+ .../Perfil_Usuario/Certificado EPS.yml             |  21 [32m++[m
+ .../Perfil_Usuario/Crear un perfil de usuario.yml  |  34 [32m+++[m
+ .../Perfil_Usuario/Desabilitar perfil.yml          |  26 [32m+++[m
+ .../Perfil_Usuario/Foto perfil.yml                 |  25 [32m+++[m
+ .../Mi perfil.yml}                                 |  11 [32m+[m[31m-[m
+ .../Perfil_Usuario/Obtener mi perfil.yml           |  28 [32m+++[m
+ .../Obtener un perfil de usuario.yml}              |  13 [32m+[m[31m-[m
+ .../{Rendimiento => Perfil_Usuario}/folder.yml     |   2 [32m+[m[31m-[m
+ .../Actualizar plantilla horarios.yml              |  24 [31m---[m
+ .../Consulta las plantillas de horarios.yml        |  16 [31m--[m
+ .../Plantilla_horarios/Crear plantilla horario.yml |  25 [31m---[m
+ ...Elliminar las plantillas de horarios por id.yml |  16 [31m--[m
+ .../Obtener una plantilla de horario.yml           |  16 [31m--[m
+ .../Plantilla_horarios/folder.yml                  |   7 [31m-[m
+ .../Pqrs/Actualiza una Pqrs.yml                    |  27 [31m---[m
+ .../Pqrs/Consultar las Pqrs.yml                    |  16 [31m--[m
+ .../Pqrs/Elimina una Pqrs.yml                      |  16 [31m--[m
+ .../Pqrs/Obtiene una Pqrs.yml                      |  16 [31m--[m
+ .../Pqrs/Registrar una Pqrs.yml                    |  27 [31m---[m
+ bruno/Sample API Collection/Pqrs/folder.yml        |   7 [31m-[m
+ .../Rendimiento/Actualizar rendimiento.yml         |  22 [31m--[m
+ .../Rendimiento/Crear rendimineto.yml              |  25 [31m---[m
+ .../Rendimiento/Eliminar rendimiento.yml           |  16 [31m--[m
+ .../Rendimiento/Listar rendimiento.yml             |  16 [31m--[m
+ .../Resenas/Actualizar rese\303\261as.yml"         |  19 [31m--[m
+ .../Resenas/Crear rese\303\261as.yml"              |  24 [31m---[m
+ .../Resenas/Listar rese\303\261as.yml"             |  16 [31m--[m
+ bruno/Sample API Collection/Resenas/folder.yml     |   7 [31m-[m
+ .../Actualiza una Respuesta de pqrs.yml            |  24 [31m---[m
+ .../Consultar las Respuestas de pqrs.yml           |  16 [31m--[m
+ .../Elimina una respuesta de pqrs.yml              |  16 [31m--[m
+ .../Obtiene una Respuesta de pqrs.yml              |  16 [31m--[m
+ .../Registra una respuesta de pqrs.yml             |  24 [31m---[m
+ .../Respuesta_pqrs/folder.yml                      |   7 [31m-[m
+ .../Solicitud/Actualizar solicitud.yml             |  19 [31m--[m
+ .../Solicitud/Crear solicitud.yml                  |  23 [31m--[m
+ .../Solicitud/Listar todas las solicitudes.yml     |  19 [31m--[m
+ ...arcialmente las propiedades de los usuarios.yml |  16 [31m--[m
+ ...lizar todas las propiedades de los usuarios.yml |  16 [31m--[m
+ .../Usuarios/Desabilitar-Habilitar un usuario.yml  |  30 [32m+++[m
+ .../Usuarios/Eliminar usuarios.yml                 |  16 [31m--[m
+ .../Usuarios/Listar todos los usuarios.yml         |  16 [31m--[m
+ .../Usuarios/Obtener un usuario.yml                |  26 [32m+++[m
+ .../Usuarios/Registrar un usuario.yml              |  35 [32m++++[m
+ .../Usuarios/Registrar usuarios.yml                |  27 [31m---[m
+ .../environments/Desarrollo.example.yml            |   5 [32m+[m
+ .../Crear solicitud de implementos.yml             |  27 [31m---[m
+ .../solicitudImplementos/Listar.yml                |  16 [31m--[m
+ src/constants/tallas.js                            |  22 [31m--[m
+ src/controllers/asistencia.controllers.js          |  75 [31m-------[m
+ src/controllers/habilidades.controllers.js         | 157 [31m--------------[m
+ src/controllers/implementoTalla.controllers.js     | 119 [31m-----------[m
+ src/controllers/implementos.controllers.js         |  46 [31m----[m
+ src/controllers/justificacion.controllers.js       |  55 [31m-----[m
+ src/controllers/mensualidades.controllers.js       | 144 [31m-------------[m
+ src/controllers/metodoPago.controllers.js          | 148 [31m-------------[m
+ src/controllers/pagos.controllers.js               | 155 [31m--------------[m
+ src/controllers/planAsociado.controllers.js        | 148 [31m-------------[m
+ src/controllers/pqrs.crontrollers.js               | 113 [31m----------[m
+ src/controllers/rendimiento.controllers.js         |  99 [31m---------[m
+ src/controllers/resena.controllers.js              |  32 [31m---[m
+ src/controllers/respuesta_pqrs.crontrollers.js     | 130 [31m------------[m
+ src/controllers/solicitud.controllers.js           |  35 [31m----[m
+ .../solicitudImplementos.controllers.js            | 110 [31m----------[m
+ src/controllers/tipoHabilidad.controllers.js       | 148 [31m-------------[m
+ src/helpers/acceso.helpers.js                      |  48 [31m-----[m
+ src/helpers/archivo.helpers.js                     |  45 [31m----[m
+ src/helpers/codigo.helpers.js                      |   8 [31m-[m
+ src/helpers/errores.helpers.js                     |  40 [31m----[m
+ src/helpers/fecha.helpers.js                       |  14 [31m--[m
+ src/index.js                                       |  47 [32m+[m[31m----[m
+ src/models/asistencia.model.js                     |  39 [31m----[m
+ src/models/habilidades.model.js                    |  30 [31m---[m
+ src/models/implementoTalla.model.js                |  49 [31m-----[m
+ src/models/implementos.model.js                    |  50 [31m-----[m
+ src/models/justificacion.model.js                  |  72 [31m-------[m
+ src/models/mensualidades.model.js                  |  55 [31m-----[m
+ src/models/metodoPago.model.js                     |  17 [31m--[m
+ src/models/pagos.model.js                          |  59 [31m------[m
+ src/models/planAsociado.model.js                   |  30 [31m---[m
+ src/models/pqrs.model.js                           |  86 [31m--------[m
+ src/models/rendimiento.models.js                   |  42 [31m----[m
+ src/models/resena.model.js                         |  32 [31m---[m
+ src/models/respuesta_pqrs.model.js                 |  30 [31m---[m
+ src/models/solicitud.model.js                      |  41 [31m----[m
+ src/models/solicitudImplementos.model.js           |  64 [31m------[m
+ src/models/tipoHabilidad.model.js                  |  21 [31m--[m
+ src/routes/asistencia.routes.js                    |  18 [31m--[m
+ src/routes/habilidades.routes.js                   |  16 [31m--[m
+ src/routes/implementoTalla.routes.js               |  13 [31m--[m
+ src/routes/implementos.routes.js                   |  12 [31m--[m
+ src/routes/justificacion.routes.js                 |  16 [31m--[m
+ src/routes/mensualidades.routes.js                 |  21 [31m--[m
+ src/routes/metodosPago.routes.js                   |  18 [31m--[m
+ src/routes/pagos.routes.js                         |  19 [31m--[m
+ src/routes/planAsociado.routes.js                  |  17 [31m--[m
+ src/routes/pqrs.routes.js                          |  13 [31m--[m
+ src/routes/rendimiento.routes.js                   |  21 [31m--[m
+ src/routes/resena.routes.js                        |  12 [31m--[m
+ src/routes/respuesta_pqrs.routes.js                |  14 [31m--[m
+ src/routes/solicitud.routes.js                     |  12 [31m--[m
+ src/routes/solicitudImplementos.routes.js          |  12 [31m--[m
+ src/routes/tipoHabilidad.routes.js                 |  18 [31m--[m
+ src/services/asistencia.services.js                | 231 [31m---------------------[m
+ src/services/habilidades.services.js               |  33 [31m---[m
+ src/services/implementoTalla.service.js            |  52 [31m-----[m
+ src/services/implementos.services.js               |  94 [31m---------[m
+ src/services/justificacion.services.js             | 128 [31m------------[m
+ src/services/mensualidades.services.js             |  31 [31m---[m
+ src/services/metodoPago.services.js                |  35 [31m----[m
+ src/services/pagos.services.js                     |  33 [31m---[m
+ src/services/planAsociado.sevices.js               |  35 [31m----[m
+ src/services/pqrs.services.js                      |  48 [31m-----[m
+ src/services/rendimiento.services.js               | 205 [31m------------------[m
+ src/services/resena.services.js                    |  62 [31m------[m
+ src/services/respuesta_pqrs.services.js            |  89 [31m--------[m
+ src/services/solicitud.services.js                 | 152 [31m--------------[m
+ src/services/solicitudImplementos.services.js      |  28 [31m---[m
+ src/services/tipoHabilidad.services.js             |  33 [31m---[m
+ 180 files changed, 395 insertions(+), 5780 deletions(-)

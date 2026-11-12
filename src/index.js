@@ -6,6 +6,7 @@ import contactoEmergenciaRoute from './routes/contactoEmergencia.routes.js'
 import perfilUsuarioRoute from './routes/perfilUsuario.routes.js'
 import authRoute from './routes/auth.routes.js'
 import path from 'node:path';
+
 import pqrsRoute from './routes/pqrs.routes.js'
 import respuestapqrsRoute from './routes/respuesta_pqrs.routes.js'
 
@@ -28,6 +29,7 @@ import implementoTallaRoute from './routes/implementoTalla.routes.js';
 import solicitudRoute from './routes/solicitud.routes.js';
 import solicitudImplementosRoute from './routes/solicitudImplementos.routes.js';
 import resenaRoute from './routes/resena.routes.js';
+
 
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
@@ -79,6 +81,7 @@ app.use( '/api/implementoTalla' , implementoTallaRoute );
 app.use( '/api/solicitud' , solicitudRoute );
 app.use( '/api/solicitudImplementos' , solicitudImplementosRoute );
 app.use( '/api/resena' , resenaRoute );
+
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);

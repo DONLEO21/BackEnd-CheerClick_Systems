@@ -149,4 +149,9 @@ vite.config.ts.timestamp-*
 .astro/
 
 # Turbo Repo
+
+
 .turbo
+# Entorno local de Bruno con credenciales personales
+/bruno/Sample API Collection/environments/Desarrollo.yml
+
