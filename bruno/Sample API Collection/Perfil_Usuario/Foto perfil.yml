@@ -1,0 +1,25 @@
+info:
+  name: Foto perfil
+  type: http
+  seq: 7
+
+http:
+  method: PUT
+  url: http://localhost:3000/api/perfilusuario/me/foto
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  body:
+    type: multipart-form
+    data:
+      - name: foto
+        type: text
+        value: ""
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

@@ -1,17 +1,17 @@
 info:
-  name: Listar
+  name: Login de un usuario
   type: http
   seq: 2
 
 http:
-  method: GET
-  url: http://localhost:3000/api/eps
+  method: POST
+  url: http://localhost:3000/api/auth/login
   body:
     type: json
-    data: |
+    data: |-
       {
-        "nombre": "Ejemplo EPS",
-        "codigo": "EPS001"
+        "email": "Dana@gmail.com",
+        "contrasena": "Dana1234567"
       }
   auth: inherit
 

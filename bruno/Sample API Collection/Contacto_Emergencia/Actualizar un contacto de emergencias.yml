@@ -1,0 +1,28 @@
+info:
+  name: Actualizar un contacto de emergencias
+  type: http
+  seq: 2
+
+http:
+  method: PATCH
+  url: http://localhost:3000/api/contactoEmergencia/:id/status
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  params:
+    - name: id
+      value: 6af3511365bc0b00b71531a4
+      type: path
+  body:
+    type: json
+    data: |-
+      { "status": false
+        }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

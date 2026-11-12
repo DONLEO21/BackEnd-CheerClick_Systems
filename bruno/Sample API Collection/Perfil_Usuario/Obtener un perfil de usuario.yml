@@ -1,0 +1,22 @@
+info:
+  name: Obtener un perfil de usuario
+  type: http
+  seq: 2
+
+http:
+  method: GET
+  url: http://localhost:3000/api/perfilUsuario/6af3582f135fb6a1dca736ee
+  headers:
+    - name: X-token
+      value: "{{token}}"
+  body:
+    type: json
+    data: "{}"
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

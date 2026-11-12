@@ -1,0 +1,35 @@
+info:
+  name: Registrar un usuario
+  type: http
+  seq: 2
+
+http:
+  method: POST
+  url: http://localhost:3000/api/usuarios
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  body:
+    type: json
+    data: |
+      {
+        "nombre": "Camilo",
+        "apellido": "Salazar",
+        "nivel": "651a2b3c745e6f7a8b9c0d1e",
+        "mensualidad": "651ad12c4d5e6f7a8b9c0d2f",
+        "email": "carlos.mendoza@example.com",
+        "contrasena": "123456789",
+        "rol": "Atleta",
+        "createdBy": "6af274d410077a6912f66b21",
+        "status": true,
+        "codigo": "ATL-003",
+        "estadoSolicitud": "Pendiente"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

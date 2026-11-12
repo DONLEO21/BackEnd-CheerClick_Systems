@@ -1,0 +1,28 @@
+info:
+  name: CE agregado por admin
+  type: http
+  seq: 9
+
+http:
+  method: PUT
+  url: http://localhost:3000/api/perfilusuario/me/contactos
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "contactos": [
+          { "nombre": "A", "apellido": "B", "telefono": "300", "parentesco": "Otro", "principal": true },
+          { "nombre": "C", "apellido": "D", "telefono": "301", "principal": false }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

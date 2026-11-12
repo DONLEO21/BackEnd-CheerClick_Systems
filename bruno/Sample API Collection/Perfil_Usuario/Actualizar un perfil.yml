@@ -1,16 +1,19 @@
 info:
-  name: Actualizar EPS
+  name: Actualizar un perfil
   type: http
-  seq: 4
+  seq: 5
 
 http:
   method: PATCH
-  url: http://localhost:3000/api/eps/6ad11a82b4db757a74383c79
+  url: http://localhost:3000/api/perfilUsuario/me
+  headers:
+    - name: X-Token
+      value: "{{token}}"
   body:
     type: json
     data: |-
       {
-        "nombre" : "Capital Salud"
+        "telefono": "3000000000"
       }
   auth: inherit
 
