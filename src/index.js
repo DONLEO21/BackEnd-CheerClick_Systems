@@ -23,6 +23,13 @@ import justificacionRoute from './routes/justificacion.routes.js';
 import habilidadRoute from './routes/habilidades.routes.js';
 import tipoHabilidadRoute from './routes/tipoHabilidad.routes.js';
 
+import implementosRoute from './routes/implementos.routes.js';
+import implementoTallaRoute from './routes/implementoTalla.routes.js';
+import solicitudRoute from './routes/solicitud.routes.js';
+import solicitudImplementosRoute from './routes/solicitudImplementos.routes.js';
+import resenaRoute from './routes/resena.routes.js';
+
+
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
 
 //Iniciar servidor 
@@ -65,6 +72,13 @@ app.use( '/api/justificacion' , justificacionRoute );
 app.use( '/api/habilidad', habilidadRoute);
 app.use( '/api/tipo-habilidad', tipoHabilidadRoute);
 
+
+//Modulo de Implementos
+app.use( '/api/implementos' , implementosRoute );
+app.use( '/api/implementoTalla' , implementoTallaRoute );
+app.use( '/api/solicitud' , solicitudRoute );
+app.use( '/api/solicitudImplementos' , solicitudImplementosRoute );
+app.use( '/api/resena' , resenaRoute );
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
