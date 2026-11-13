@@ -1,0 +1,22 @@
+info:
+  name: Mi perfil
+  type: http
+  seq: 6
+
+http:
+  method: PATCH
+  url: http://localhost:3000/api/perfilUsuario/me/preferencias
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  body:
+    type: json
+    data: ""
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

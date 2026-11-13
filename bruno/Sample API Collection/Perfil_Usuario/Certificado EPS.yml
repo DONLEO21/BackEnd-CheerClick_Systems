@@ -1,0 +1,21 @@
+info:
+  name: Certificado EPS
+  type: http
+  seq: 8
+
+http:
+  method: PUT
+  url: http://localhost:3000/api/perfilusuario/me/certificado-eps
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  body:
+    type: multipart-form
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

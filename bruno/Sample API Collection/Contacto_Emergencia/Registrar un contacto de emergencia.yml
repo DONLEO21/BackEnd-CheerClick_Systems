@@ -1,0 +1,31 @@
+info:
+  name: Registrar un contacto de emergencia
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://localhost:3000/api/contactoEmergencia/
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "parentesco": "Padre",
+        "nombre": "Jose",
+        "apellido": "Rosal",
+        "telefono": "31348220",
+        "principal": false,
+        "createdBy": "6af349edbe436e3f449a0d4d",
+        "status": false
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

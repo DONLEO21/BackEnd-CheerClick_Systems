@@ -1,20 +1,20 @@
 info:
-  name: Login Usuario
+  name: Registrar un usuarios
   type: http
-  seq: 2
+  seq: 1
 
 http:
   method: POST
-  url: http://localhost:3000/api/auth/login
+  url: http://localhost:3000/api/auth/register
   body:
     type: json
     data: |-
       {
-        "nombre": "Leonardo",
+        "nombre": "Eileen",
         "apellido": "Morales",
-        "email": "Leonardo@gmail.com",
-        "contrasena": "012345",
-        "rol": "Atleta",
+        "email": "Eileen@gmail.com",
+        "contrasena": "eilen123456",
+        "rol": "Administrador",
         "status": true
       }
   auth: inherit

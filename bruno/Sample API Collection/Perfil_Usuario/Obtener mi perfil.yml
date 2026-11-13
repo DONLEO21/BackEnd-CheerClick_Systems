@@ -1,0 +1,28 @@
+info:
+  name: Obtener mi perfil
+  type: http
+  seq: 5
+
+http:
+  method: GET
+  url: http://localhost:3000/api/perfilUsuario/me
+  headers:
+    - name: X-Token
+      value: "{{token}}"
+  body:
+    type: json
+    data: |-
+      {
+        "contactos": [
+          { "_id": "6af3db85c4135b61488d40cf", "nombre": "Camila", "apellido": "Rosal", "telefono": "3139999999", "principal": true },
+          { "_id": "6af3db85c4135b61488d40d0", "nombre": "Jorge", "apellido": "Rosal", "telefono": "3109990000", "principal": false }
+        ]
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false

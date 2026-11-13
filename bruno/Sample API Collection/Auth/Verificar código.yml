@@ -1,16 +1,17 @@
 info:
-  name: Crear Eps
+  name: Verificar código
   type: http
-  seq: 1
+  seq: 4
 
 http:
   method: POST
-  url: http://localhost:3000/api/eps
+  url: http://localhost:3000/api/auth/verify-code
   body:
     type: json
     data: |-
       {
-        "nombre" : "Capital Salud"
+        "email": "amyleeespanol@gmail.com",
+        "code": "755103"
       }
   auth: inherit
 
