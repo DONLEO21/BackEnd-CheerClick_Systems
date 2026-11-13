@@ -62,6 +62,7 @@ const createUsuario = async (req, res) => {
             return res.status(400).json({ errors: { rol: 'Rol no válido' } });
         }
         usuario.rol = usuario.rol || 'Atleta';
+        //usuario.nivel // TODO: Obtener el ID del Nivel para asignarlo aqui
 
         usuario.createdBy = req.userFound._id;
         usuario.status = true;
