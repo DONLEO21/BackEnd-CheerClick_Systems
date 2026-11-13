@@ -30,11 +30,13 @@ import solicitudRoute from './routes/solicitud.routes.js';
 import solicitudImplementosRoute from './routes/solicitudImplementos.routes.js';
 import resenaRoute from './routes/resena.routes.js';
 
+
 import horariosRoute from './routes/horarios.routes.js';
 import plantilla_horariosRoute from './routes/plantilla_horarios.routes.js'
 import nivelesRoute from './routes/niveles.routes.js'
 import competenciasRoute from './routes/competencias.routes.js'
 import inscripciones_competenciasRoute from './routes/inscripciones_competencias.routes.js'
+
 
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
@@ -87,11 +89,13 @@ app.use( '/api/solicitud' , solicitudRoute );
 app.use( '/api/solicitudImplementos' , solicitudImplementosRoute );
 app.use( '/api/resena' , resenaRoute );
 
+
 app.use('/api/horarios', horariosRoute);
 app.use('/api/plantilla_horario', plantilla_horariosRoute);
 app.use('/api/niveles', nivelesRoute );
 app.use('/api/competencias', competenciasRoute);
 app.use('/api/inscripciones_competencias', inscripciones_competenciasRoute);
+
 
 
 app.listen(port, () => {
