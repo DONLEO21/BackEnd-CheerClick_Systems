@@ -1,27 +1,46 @@
+import mongoose from "mongoose";
 import crypto from "node:crypto";
 import { verifyPassword, generarPassword } from "../helpers/bcrypt.helpers.js";
 import { dbGetUserByEmail, dbGetUserForReset, dbUpdateUsuario, dbCreateUsuario, dbFindUserByEmail } from "../services/usuarios.services.js";
 import { generateToken } from "../helpers/jwt.helpers.js";
 import { sendResetCodeEmail } from "../services/email.services.js";
 
+import PlanAsociadoModel from "../models/planAsociado.model.js";
+
 // Registro público: siempre Atleta, pendiente de aprobación
 const registerUsuario = async (req, res) => {
   try {
-    // Solo se toman estos cuatro campos; todo lo demás del body se ignora
-    const { nombre, apellido, contrasena } = req.body;
+    // Se toman estos campos; todo lo demás del body se ignora
+    const { nombre, apellido, contrasena, planAsociado } = req.body;
     const email = req.body.email?.trim().toLowerCase();
 
-    if (!email) {
-      return res.status(400).json({
-        errors: { email: 'El correo es obligatorio' }
-      });
-    }
+    const errors = {};
+
+    if (!email) errors.email = 'El correo es obligatorio';
 
     if (!contrasena || contrasena.length < 8) {
+      errors.contrasena = 'La contraseña debe tener mínimo 8 caracteres';
+    }
+
+    if (!planAsociado) {
+      errors.planAsociado = 'El plan es obligatorio';
+    } else if (!mongoose.isValidObjectId(planAsociado)) {
+      errors.planAsociado = 'El plan no es un id válido';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ errors });
+    }
+
+    // Verificar que el plan exista y esté activo
+    const planFound = await PlanAsociadoModel.findOne({
+      _id: planAsociado,
+      estado: 'Activo'
+    });
+
+    if (!planFound) {
       return res.status(400).json({
-        errors: {
-          contrasena: 'La contraseña debe tener mínimo 8 caracteres'
-        }
+        errors: { planAsociado: 'El plan no existe o está inactivo' }
       });
     }
 
@@ -36,6 +55,7 @@ const registerUsuario = async (req, res) => {
       apellido,
       email,
       contrasena: generarPassword(contrasena),
+      planAsociado,
       rol: 'Atleta',
       estadoSolicitud: 'Pendiente',
       status: true
