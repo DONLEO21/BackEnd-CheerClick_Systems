@@ -1,6 +1,7 @@
 import { dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbFindUserByEmail, dbGenerarCodigo, PREFIJOS } from "../services/usuarios.services.js";
 import { generarPassword } from "../helpers/bcrypt.helpers.js";
-import { sendCorreoCambiadoEmail } from "../services/email.services.js";
+import { sendCorreoCambiadoEmail, sendCambioCuentaEmail } from "../services/email.services.js";
+import { notificar } from "../services/notificaciones.services.js";
 
 const responderError = (res, error, msg) => {
     console.error(error);
@@ -115,8 +116,8 @@ const updateUsuario = async (req, res) => {
         delete inputData.resetAttempts;
         delete inputData.codigo;
         delete inputData.estadoSolicitud;
-        delete inputData.rol;      
-        delete inputData.status;    
+        delete inputData.rol;       // usa PATCH /:id/rol
+        delete inputData.status;    // usa PATCH /:id/status
 
         // Nivel y plan solo los asigna el admin
         if (!esAdmin(req)) {
@@ -149,12 +150,35 @@ const updateUsuario = async (req, res) => {
 
         const data = await dbUpdateUsuario(id, inputData);
 
+        const correoCambio = inputData.email && inputData.email !== actual.email;
+
         // Avisar al correo anterior (si falla, el cambio igual queda guardado)
-        if (inputData.email && inputData.email !== actual.email) {
+        if (correoCambio) {
             try {
                 await sendCorreoCambiadoEmail(actual.email, actual.nombre, inputData.email);
             } catch (error) {
                 console.error(error);
+            }
+        }
+
+        // Si lo editó otra persona (el admin), el usuario se entera
+        if (String(id) !== String(req.userFound._id)) {
+            if (correoCambio) {
+                await notificar(id, 'seguridad', 'El correo de tu cuenta fue cambiado');
+            }
+
+            const campos = Object.keys(inputData).filter(c => c !== 'email' && c !== 'contrasena').join(', ');
+            if (campos) {
+                const mensaje = `El administrador actualizó tus datos: ${campos}`;
+                await notificar(id, 'perfil', mensaje);
+
+                if (actual.preferencias?.correos !== false) {
+                    try {
+                        await sendCambioCuentaEmail(correoCambio ? inputData.email : actual.email, actual.nombre, `${mensaje}.`);
+                    } catch (error) {
+                        console.error(error);
+                    }
+                }
             }
         }
 
