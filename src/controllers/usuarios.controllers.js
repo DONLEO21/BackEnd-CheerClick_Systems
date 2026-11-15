@@ -20,12 +20,6 @@ const responderError = (res, error, msg) => {
     res.status(500).json({ msg });
 }
 
-const esAdmin = (req) => req.userFound.rol === 'Administrador';
-
-// Solo el propio usuario o un administrador
-const esDuenoOAdmin = (req, idUsuario) =>
-    esAdmin(req) || String(idUsuario) === String(req.userFound._id);
-
 // Nunca devuelve el hash
 const sinContrasena = (doc) => {
     const obj = doc.toObject();
@@ -33,27 +27,7 @@ const sinContrasena = (doc) => {
     return obj;
 }
 
-const getUsuario = async (req, res) => {
-    try {
-        if (!esDuenoOAdmin(req, req.params.id)) {
-            return res.status(403).json({ msg: 'No tienes permiso sobre este usuario' });
-        }
-
-        const data = await dbGetUsuario(req.params.id);
-
-        // Una cuenta inhabilitada solo la ve el admin
-        if (!data || (!data.status && !esAdmin(req))) {
-            return res.status(404).json({ msg: 'Usuario no encontrado' });
-        }
-
-        res.json({ msg: 'Obtiene un usuario', data: sinContrasena(data) });
-    }
-    catch (error) {
-        responderError(res, error, 'No se puede obtener el usuario por ID');
-    }
-}
-
-// Creación por el administrador: nace aprobada, activa y con código
+// POST /api/usuarios  (solo administrador): nace aprobada, activa y con código
 const createUsuario = async (req, res) => {
     try {
         const usuario = req.body;
@@ -94,36 +68,27 @@ const createUsuario = async (req, res) => {
         responderError(res, error, 'Error al registrar usuario');
     }
 }
-
+// No cambia contraseña, rol ni status
 const updateUsuario = async (req, res) => {
     try {
         const id = req.params.id;
         const inputData = req.body;
 
-        if (!esDuenoOAdmin(req, id)) {
-            return res.status(403).json({ msg: 'No tienes permiso sobre este usuario' });
-        }
-
         const actual = await dbGetUsuario(id);
-        if (!actual || (!actual.status && !esAdmin(req))) {
+        if (!actual) {
             return res.status(404).json({ msg: 'Usuario no encontrado' });
         }
 
         // Campos que nunca se cambian desde aquí
+        delete inputData.contrasena;
         delete inputData.createdBy;
         delete inputData.resetCodeHash;
         delete inputData.resetCodeExpires;
         delete inputData.resetAttempts;
         delete inputData.codigo;
         delete inputData.estadoSolicitud;
-        delete inputData.rol;       // usa PATCH /:id/rol
-        delete inputData.status;    // usa PATCH /:id/status
-
-        // Nivel y plan solo los asigna el admin
-        if (!esAdmin(req)) {
-            delete inputData.nivel;
-            delete inputData.planAsociado;
-        }
+        delete inputData.rol;       
+        delete inputData.status;   
 
         // Correo: en minúscula y sin repetir
         if (inputData.email) {
@@ -137,17 +102,6 @@ const updateUsuario = async (req, res) => {
             }
         }
 
-        // Contraseña: solo la cambia su dueño
-        if (inputData.contrasena) {
-            if (String(id) !== String(req.userFound._id)) {
-                return res.status(403).json({ msg: 'Solo el dueño de la cuenta puede cambiar su contraseña' });
-            }
-            if (inputData.contrasena.length < 8) {
-                return res.status(400).json({ errors: { contrasena: 'La contraseña debe tener mínimo 8 caracteres' } });
-            }
-            inputData.contrasena = generarPassword(inputData.contrasena);
-        }
-
         const data = await dbUpdateUsuario(id, inputData);
 
         const correoCambio = inputData.email && inputData.email !== actual.email;
@@ -159,25 +113,20 @@ const updateUsuario = async (req, res) => {
             } catch (error) {
                 console.error(error);
             }
+            await notificar(id, 'seguridad', 'El correo de tu cuenta fue cambiado');
         }
 
-        // Si lo editó otra persona (el admin), el usuario se entera
-        if (String(id) !== String(req.userFound._id)) {
-            if (correoCambio) {
-                await notificar(id, 'seguridad', 'El correo de tu cuenta fue cambiado');
-            }
+        // El usuario se entera de los demás cambios hechos por el administrador
+        const campos = Object.keys(inputData).filter(c => c !== 'email').join(', ');
+        if (campos) {
+            const mensaje = `El administrador actualizó tus datos: ${campos}`;
+            await notificar(id, 'perfil', mensaje);
 
-            const campos = Object.keys(inputData).filter(c => c !== 'email' && c !== 'contrasena').join(', ');
-            if (campos) {
-                const mensaje = `El administrador actualizó tus datos: ${campos}`;
-                await notificar(id, 'perfil', mensaje);
-
-                if (actual.preferencias?.correos !== false) {
-                    try {
-                        await sendCambioCuentaEmail(correoCambio ? inputData.email : actual.email, actual.nombre, `${mensaje}.`);
-                    } catch (error) {
-                        console.error(error);
-                    }
+            if (actual.preferencias?.correos !== false) {
+                try {
+                    await sendCambioCuentaEmail(correoCambio ? inputData.email : actual.email, actual.nombre, `${mensaje}.`);
+                } catch (error) {
+                    console.error(error);
                 }
             }
         }
@@ -189,4 +138,4 @@ const updateUsuario = async (req, res) => {
     }
 }
 
-export { getUsuario, createUsuario, updateUsuario }
+export { createUsuario, updateUsuario }

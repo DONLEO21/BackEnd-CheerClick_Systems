@@ -296,12 +296,7 @@ const cambiarRol = async ( req, res ) => {
 }
 
 export {
-    listSolicitudes,
-    getDetalleUsuario,
-    descargarCertificadoEps,
-    aprobarSolicitud,
-    rechazarSolicitud,
-    listCuentas,
-    cambiarStatus,
-    cambiarRol
+    listSolicitudes, getDetalleUsuario, descargarCertificadoEps,
+    aprobarSolicitud, rechazarSolicitud, listCuentas,
+    cambiarStatus, cambiarRol
 }

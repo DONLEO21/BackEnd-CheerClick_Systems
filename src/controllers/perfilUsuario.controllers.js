@@ -114,18 +114,6 @@ const createPerfilUsuario = async (req, res) => {
     }
 }
 
-const getPerfilUsuario = async (req, res) => {
-    try {
-        const perfil = await cargarPerfil(req, res);
-        if (!perfil) return;
-
-        res.json({ msg: 'Obtiene un perfil de usuario', data: perfilPublico(perfil) });
-    }
-    catch (error) {
-        responderError(res, error, 'No se puede obtener el perfil de usuario por ID');
-    }
-}
-
 // Edición por el administrador (sin límite de ediciones)
 const updatePerfilUsuario = async (req, res) => {
     try {
@@ -149,34 +137,6 @@ const updatePerfilUsuario = async (req, res) => {
     }
     catch (error) {
         responderError(res, error, 'No se ha podido actualizar el perfil de usuario por ID');
-    }
-}
-
-// Inactiva o activa un perfil de usuario
-const cambiarEstadoPerfilUsuario = async (req, res) => {
-    try {
-        const { status } = req.body;
-
-        if (typeof status !== 'boolean') {
-            return res.status(400).json({ errors: { status: 'Debe ser true o false' } });
-        }
-
-        const perfil = await cargarPerfil(req, res);
-        if (!perfil) return;
-
-        if (status === true && !esAdmin(req)) {
-            return res.status(403).json({ msg: 'Solo un administrador puede reactivar un perfil' });
-        }
-
-        const data = await dbUpdatePerfilUsuario(req.params.id, { status });
-
-        res.json({
-            msg: status ? 'Perfil reactivado' : 'Perfil inhabilitado',
-            data: perfilPublico(data)
-        });
-    }
-    catch (error) {
-        responderError(res, error, 'No se ha podido cambiar el estado del perfil');
     }
 }
 
@@ -521,15 +481,7 @@ const updateMisPreferencias = async (req, res) => {
 }
 
 export {
-    createPerfilUsuario,
-    getPerfilUsuario,
-    updatePerfilUsuario,
-    cambiarEstadoPerfilUsuario,
-    getMiPerfil,
-    updateMiPerfil,
-    updateMiFoto,
-    updateMiCertificado,
-    descargarMiCertificado,
-    updateMisContactos,
-    updateMisPreferencias
+    createPerfilUsuario, updatePerfilUsuario, getMiPerfil,
+    updateMiPerfil, updateMiFoto, updateMiCertificado,
+    descargarMiCertificado, updateMisContactos, updateMisPreferencias
 }
