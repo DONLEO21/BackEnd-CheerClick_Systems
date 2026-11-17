@@ -15,12 +15,20 @@ const usuarioSchema = new Schema({
     },
     nivel: {
         type: Schema.Types.ObjectId,
-        ref: 'Nivel',           
+        ref: 'Nivel',   
+        // required: [
+        //     function () { return ['Atleta', 'Entrenador'].includes(this.rol); },
+        //     'El nivel es obligatorio'
+        // ],        
         default: null
     },
     planAsociado: {
         type: Schema.Types.ObjectId,
-        ref: 'planAsociado',     
+        ref: 'planAsociado',    
+        required: [
+            function () { return this.rol === 'Atleta'; },
+            'El plan es obligatorio'
+        ], 
         default: null
     },
     email: {

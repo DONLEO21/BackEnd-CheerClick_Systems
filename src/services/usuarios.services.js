@@ -1,7 +1,7 @@
 // Servicio se habla con la db. Estas funciones
 // realizaran la consultas a la db
 import mongoose from "mongoose"
-import usuarioModel from "../models/usuarios.models.js"
+import usuarioModel from "../models/usuarios.model.js"
 import contadorModel from "../models/contador.model.js"
 
 

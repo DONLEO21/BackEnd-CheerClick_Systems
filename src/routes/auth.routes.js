@@ -1,26 +1,23 @@
 import { Router } from "express";
-import { registerUsuario, loginUser, verifyAuthenticate, forgotPassword, verifyCode, resetPassword } from "../controllers/auth.controllers.js";
+import { registrarUsuario, loginUsuario, renovarToken, olvideContrasena, verificarCodigo, restablecerContrasena } from "../controllers/auth.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
-import { withRoleMiddleware } from "../middlewares/withrout.middleware.js";
 import { loginLimiter, registerLimiter, forgotLimiter, resetLimiter } from "../middlewares/rateLimit.middlewares.js";
 
 const router = Router();
 
-// 1. Registro publico de usuarios (default: Atleta)
-router.post( '/register', registerLimiter, withRoleMiddleware, registerUsuario );
+// 1. Registro público (siempre Atleta, queda pendiente de aprobación)
+router.post( '/registro', registerLimiter, registrarUsuario );
 
 // 2. Login de usuarios
-router.post( '/login', loginLimiter, loginUser );
+router.post( '/login', loginLimiter, loginUsuario );
 
-// 3. Renovación de Credenciales (Token) -> ya exige token, sin límite
-router.get( '/renew-token', authMiddleware, verifyAuthenticate );
+// 3. Renovación de credenciales (token) -> ya exige token, sin límite
+router.get( '/renovar-token', authMiddleware, renovarToken );
 
-// 4. Recuperar Contraseña (3 pasos)
-router.post( '/forgot-password', forgotLimiter, forgotPassword );
-router.post( '/resend-code', forgotLimiter, forgotPassword );
-router.post( '/verify-code', resetLimiter, verifyCode );
-router.post( '/reset-password', resetLimiter, resetPassword );
-
-// 5. Habilitar cuenta regustrada publicamente
+// 4. Recuperar contraseña (3 pasos)
+router.post( '/olvide-contrasena', forgotLimiter, olvideContrasena );        // Paso 1: enviar código al correo
+router.post( '/reenviar-codigo', forgotLimiter, olvideContrasena );          // Reenviar código (misma lógica)
+router.post( '/verificar-codigo', resetLimiter, verificarCodigo );           // Paso 2: validar el código
+router.post( '/restablecer-contrasena', resetLimiter, restablecerContrasena ); // Paso 3: nueva contraseña
 
 export default router;

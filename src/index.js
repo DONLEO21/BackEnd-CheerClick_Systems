@@ -6,7 +6,6 @@ import contactoEmergenciaRoute from './routes/contactoEmergencia.routes.js'
 import perfilUsuarioRoute from './routes/perfilUsuario.routes.js'
 import authRoute from './routes/auth.routes.js'
 import path from 'node:path';
-
 import pqrsRoute from './routes/pqrs.routes.js'
 import respuestapqrsRoute from './routes/respuesta_pqrs.routes.js'
 
@@ -36,6 +35,7 @@ import plantilla_horariosRoute from './routes/plantilla_horarios.routes.js'
 import nivelesRoute from './routes/niveles.routes.js'
 import competenciasRoute from './routes/competencias.routes.js'
 import inscripciones_competenciasRoute from './routes/inscripciones_competencias.routes.js'
+import notificacionesRoute from './routes/notificaciones.routes.js'
 
 
 
@@ -95,7 +95,8 @@ app.use('/api/plantilla_horario', plantilla_horariosRoute);
 app.use('/api/niveles', nivelesRoute );
 app.use('/api/competencias', competenciasRoute);
 app.use('/api/inscripciones_competencias', inscripciones_competenciasRoute);
-
+app.use( '/api/auth' , authRoute)
+app.use( '/api/notificaciones' , notificacionesRoute)
 
 
 app.listen(port, () => {

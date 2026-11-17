@@ -4,6 +4,7 @@ import {
 import { dbGetPerfilByUsuario } from "../services/perfilUsuario.services.js";
 import { dbGetContactosByUsuario } from "../services/contactoEmergencia.services.js";
 import { sendSolicitudEmail } from "../services/email.services.js";
+import { notificar } from "../services/notificaciones.services.js";
 import { rutaCertificado } from "../services/archivos.services.js";
 
 const ESTADOS = ['Pendiente', 'Aprobada', 'Rechazada'];
@@ -44,7 +45,7 @@ const responderError = ( res, error, msg ) => {
 
 // ---------- Solicitudes de cuentas nuevas ----------
 
-// GET /api/usuarios/solicitudes?estado=Pendiente&buscar=sofia&page=1
+// visualizar solicitudes de cuentas (solo admin)
 const listSolicitudes = async ( req, res ) => {
     try {
         const { estado = 'Pendiente', buscar, page } = req.query;
@@ -68,7 +69,7 @@ const listSolicitudes = async ( req, res ) => {
     }
 }
 
-// GET /api/usuarios/:id/detalle  (el "ojito": registro + perfil + contactos de emergencia)
+// obtener detalle de un usuario (solo admin)
 const getDetalleUsuario = async ( req, res ) => {
     try {
         const id = req.params.id;
@@ -89,8 +90,8 @@ const getDetalleUsuario = async ( req, res ) => {
             perfilObj.tieneCertificadoEps = !!perfilObj.certificadoEps;
             perfilObj.certificadoEpsUrl = perfilObj.certificadoEps ? `/api/usuarios/${id}/certificado-eps` : null;
 
-            delete perfilObj.certificadoEps;   
-            delete perfilObj.fotoPerfil;     
+            delete perfilObj.certificadoEps;   // nunca se expone el nombre del archivo
+            delete perfilObj.fotoPerfil;       // el detalle de cuentas no muestra la foto
         }
 
         res.json({ msg: 'Detalle del usuario', data: { usuario, perfil: perfilObj, contactos } });
@@ -100,7 +101,7 @@ const getDetalleUsuario = async ( req, res ) => {
     }
 }
 
-// GET /api/usuarios/:id/certificado-eps visualizar certificado solo admin
+// descargar certificado de EPS (solo administrador)
 const descargarCertificadoEps = async ( req, res ) => {
     try {
         const perfil = await dbGetPerfilByUsuario( req.params.id );
@@ -120,7 +121,7 @@ const descargarCertificadoEps = async ( req, res ) => {
     }
 }
 
-// PATCH /api/usuarios/solicitudes/:id/aprobar  aprobar una solicitud de cuenta
+// Aprobar solicitud de cuenta (solo admin)
 const aprobarSolicitud = async ( req, res ) => {
     try {
         const id = req.params.id;
@@ -162,7 +163,7 @@ const aprobarSolicitud = async ( req, res ) => {
     }
 }
 
-// PATCH /api/usuarios/solicitudes/:id/rechazar rechazar una solicitud de cuenta 
+// rechazar solicitud de cuenta (solo admin)
 const rechazarSolicitud = async ( req, res ) => {
     try {
         const id = req.params.id;
@@ -195,7 +196,7 @@ const rechazarSolicitud = async ( req, res ) => {
 
 // ---------- Gestión de cuentas ----------
 
-// GET /api/usuarios?buscar=stuard&page=1  filtrar por nombre, apellido o correo
+// GET buscar cuentas (solo admin) 
 const listCuentas = async ( req, res ) => {
     try {
         const { buscar, page } = req.query;
@@ -218,7 +219,7 @@ const listCuentas = async ( req, res ) => {
     }
 }
 
-// PATCH /api/usuarios/:id/status   cambiar estado activo o inactivo (solo admin)
+// actualizar estado de la cuenta (solo admin)
 const cambiarStatus = async ( req, res ) => {
     try {
         const id = req.params.id;
@@ -244,6 +245,8 @@ const cambiarStatus = async ( req, res ) => {
 
         const data = await dbUpdateUsuario( id, { status: status } );
 
+        await notificar( id, 'cuenta', status ? 'Tu cuenta fue activada' : 'Tu cuenta fue desactivada' );
+
         res.json({ msg: status ? 'Cuenta activada' : 'Cuenta desactivada', data: sinContrasena( data ) });
 
     } catch (error) {
@@ -251,7 +254,7 @@ const cambiarStatus = async ( req, res ) => {
     }
 }
 
-// PATCH /api/usuarios/:id/rol   cambiar rol solo admin
+// cambia rol de un usuario (solo admin)
 const cambiarRol = async ( req, res ) => {
     try {
         const id = req.params.id;
@@ -282,6 +285,9 @@ const cambiarRol = async ( req, res ) => {
         // El código cambia con el rol: pasa de AT003 a EN001, por ejemplo
         const data = await dbUpdateUsuario( id, { rol: rol, codigo: await dbGenerarCodigo( rol ) } );
 
+        // Solo notificación interna (sin correo)
+        await notificar( id, 'cuenta', `Tu rol cambió a ${rol}` );
+
         res.json({ msg: 'Rol actualizado', data: sinContrasena( data ) });
 
     } catch (error) {
@@ -290,12 +296,7 @@ const cambiarRol = async ( req, res ) => {
 }
 
 export {
-    listSolicitudes,
-    getDetalleUsuario,
-    descargarCertificadoEps,
-    aprobarSolicitud,
-    rechazarSolicitud,
-    listCuentas,
-    cambiarStatus,
-    cambiarRol
+    listSolicitudes, getDetalleUsuario, descargarCertificadoEps,
+    aprobarSolicitud, rechazarSolicitud, listCuentas,
+    cambiarStatus, cambiarRol
 }

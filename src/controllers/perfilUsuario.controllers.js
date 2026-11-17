@@ -1,7 +1,13 @@
-import { dbCreatePerfilUsuario, dbGetPerfilUsuario, dbUpdatePerfilUsuario, dbGetPerfilByUsuario } from "../services/perfilUsuario.services.js";
+import {
+    dbCreatePerfilUsuario,
+    dbGetPerfilUsuario,
+    dbUpdatePerfilUsuario,
+    dbGetPerfilByUsuario
+} from "../services/perfilUsuario.services.js";
 import { dbGetContactosByUsuario, dbCreateContactoE, dbUpdateContactoE } from "../services/contactoEmergencia.services.js";
 import { dbGetUsuarioConPlan, dbFindUserByEmail, dbUpdateUsuario } from "../services/usuarios.services.js";
 import { sendCorreoCambiadoEmail } from "../services/email.services.js";
+import { notificar } from "../services/notificaciones.services.js";
 import { guardarFoto, borrarFoto, guardarCertificado, borrarCertificado, rutaCertificado } from "../services/archivos.services.js";
 
 const responderError = (res, error, msg) => {
@@ -33,7 +39,7 @@ const esDuenoOAdmin = (req, perfil) => {
     return String(duenoId) === String(req.userFound._id);
 }
 
-// El certificado es privado: nunca se expone su nombre de archivo, solo si existe
+// El certificado es privado: nunca se expone su nombre de archivo
 const perfilPublico = (perfil) => {
     if (!perfil) return null;
     const obj = perfil.toObject();
@@ -42,8 +48,7 @@ const perfilPublico = (perfil) => {
     return obj;
 }
 
-// Carga el perfil y valida existencia, estado y permisos.
-// Si algo falla ya responde y devuelve null.
+// Carga el perfil y valida existencia, estado y permisos
 const cargarPerfil = async (req, res) => {
     const perfil = await dbGetPerfilUsuario(req.params.id);
 
@@ -109,19 +114,7 @@ const createPerfilUsuario = async (req, res) => {
     }
 }
 
-const getPerfilUsuario = async (req, res) => {
-    try {
-        const perfil = await cargarPerfil(req, res);
-        if (!perfil) return;
-
-        res.json({ msg: 'Obtiene un perfil de usuario', data: perfilPublico(perfil) });
-    }
-    catch (error) {
-        responderError(res, error, 'No se puede obtener el perfil de usuario por ID');
-    }
-}
-
-// Edición por el administrador 
+// Edición por el administrador (sin límite de ediciones)
 const updatePerfilUsuario = async (req, res) => {
     try {
         const perfil = await cargarPerfil(req, res);
@@ -135,38 +128,15 @@ const updatePerfilUsuario = async (req, res) => {
 
         const data = await dbUpdatePerfilUsuario(req.params.id, inputData);
 
+        // Si lo editó otra persona (el admin), el dueño se entera
+        if (String(perfil.perteneceA) !== String(req.userFound._id)) {
+            await notificar(perfil.perteneceA, 'perfil', 'El administrador actualizó tu información personal');
+        }
+
         res.json({ msg: 'Perfil de usuario actualizado', data: perfilPublico(data) });
     }
     catch (error) {
         responderError(res, error, 'No se ha podido actualizar el perfil de usuario por ID');
-    }
-}
-
-// Inactiva o activa un perfil de usuario
-const cambiarEstadoPerfilUsuario = async (req, res) => {
-    try {
-        const { status } = req.body;
-
-        if (typeof status !== 'boolean') {
-            return res.status(400).json({ errors: { status: 'Debe ser true o false' } });
-        }
-
-        const perfil = await cargarPerfil(req, res);
-        if (!perfil) return;
-
-        if (status === true && !esAdmin(req)) {
-            return res.status(403).json({ msg: 'Solo un administrador puede reactivar un perfil' });
-        }
-
-        const data = await dbUpdatePerfilUsuario(req.params.id, { status });
-
-        res.json({
-            msg: status ? 'Perfil reactivado' : 'Perfil inhabilitado',
-            data: perfilPublico(data)
-        });
-    }
-    catch (error) {
-        responderError(res, error, 'No se ha podido cambiar el estado del perfil');
     }
 }
 
@@ -175,7 +145,7 @@ const cambiarEstadoPerfilUsuario = async (req, res) => {
 // Campos que el usuario solo puede corregir una vez
 const CAMPOS_UNA_VEZ = ['numDocumento', 'genero', 'fechaNacimiento'];
 
-
+// GET /api/perfilusuario/me
 const getMiPerfil = async (req, res) => {
     try {
         const id = req.userFound._id;
@@ -198,9 +168,9 @@ const getMiPerfil = async (req, res) => {
             msg: 'Mi perfil',
             data: {
                 nombreCompleto: `${usuario.nombre} ${usuario.apellido}`,
-                usuario,                 
-                perfil: perfilObj,       
-                camposBloqueados,       
+                usuario,
+                perfil: perfilObj,
+                camposBloqueados,
                 contactos
             }
         });
@@ -215,13 +185,14 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const mismaFecha = (a, b) => new Date(a).toISOString().slice(0, 10) === new Date(b).toISOString().slice(0, 10);
 
+// PATCH /api/perfilusuario/me
 const updateMiPerfil = async (req, res) => {
     try {
         const body = req.body;
         const user = req.userFound;
         const admin = esAdmin(req);
 
-        // ----- Paso 1: datos del usuario
+        // ----- Paso 1: datos del usuario (nombre, apellido, correo) -----
         const datosUsuario = {};
 
         for (const campo of ['nombre', 'apellido']) {
@@ -267,7 +238,7 @@ const updateMiPerfil = async (req, res) => {
                 return res.status(400).json({ errors: { fechaNacimiento: 'La fecha no es válida' } });
             }
 
-            // Campos de una sola vez
+            // Campos de una sola vez: el administrador no tiene límite
             if (!admin) {
                 const bloqueados = [];
 
@@ -318,7 +289,7 @@ const updateMiPerfil = async (req, res) => {
             await dbUpdateUsuario(user._id, datosUsuario);
         }
 
-        // ----- Paso 5: avisar al correo anterior ----
+        // ----- Paso 5: avisar al correo anterior (si falla, el cambio igual queda) -----
         let correoAvisado = null;
         if (correoAnterior) {
             try {
@@ -328,6 +299,8 @@ const updateMiPerfil = async (req, res) => {
                 console.error(error);
                 correoAvisado = false;
             }
+
+            await notificar(user._id, 'seguridad', 'El correo de tu cuenta fue cambiado');
         }
 
         res.json({ msg: 'Perfil actualizado', correoAvisado });
@@ -337,7 +310,7 @@ const updateMiPerfil = async (req, res) => {
     }
 }
 
-// Actualiza la foto de perfil del usuario. Borra la anterior si existía.
+// Actualiza la foto de perfil del propio usuario
 const updateMiFoto = async (req, res) => {
     try {
         const perfil = await dbGetPerfilByUsuario(req.userFound._id);
@@ -354,8 +327,7 @@ const updateMiFoto = async (req, res) => {
         responderError(res, error, 'No se pudo guardar la foto');
     }
 }
-
-// PUT /api/perfilusuario/me/certificado-eps  (se puede volver a subir: reemplaza el anterior)
+//Subir el certificado de EPS del propio usuario
 const updateMiCertificado = async (req, res) => {
     try {
         const perfil = await dbGetPerfilByUsuario(req.userFound._id);
@@ -371,9 +343,8 @@ const updateMiCertificado = async (req, res) => {
         if (error.status === 400) return res.status(400).json({ msg: error.message });
         responderError(res, error, 'No se pudo guardar el certificado');
     }
-}
 
-// GET /api/perfilusuario/me/certificado-eps  descargar certificado del usuario
+}//Descargar el certificado de EPS del propio usuario
 const descargarMiCertificado = async (req, res) => {
     try {
         const perfil = await dbGetPerfilByUsuario(req.userFound._id);
@@ -393,6 +364,8 @@ const descargarMiCertificado = async (req, res) => {
     }
 }
 
+// ---------- Contactos de emergencia ----------
+
 const PARENTESCOS = ['Madre', 'Padre', 'Tutor', 'Cónyuge', 'Otro'];
 
 // Valida un contacto
@@ -406,7 +379,6 @@ const validarContacto = ( c ) => {
     return Object.keys( errors ).length > 0 ? errors : null;
 }
 
-// PUT /api/perfilusuario/me/contactos   actualizar contactos de emergencia del usuario
 const updateMisContactos = async (req, res) => {
     try {
         const lista = req.body.contactos;
@@ -434,7 +406,7 @@ const updateMisContactos = async (req, res) => {
             return res.status(400).json({ errors: errores });
         }
 
-        // Los _id enviados son contactos activos del propio usuario
+        // Los _id enviados deben ser contactos activos del propio usuario
         const actuales = await dbGetContactosByUsuario( user._id );
         const idsPropios = actuales.map( c => String( c._id ) );
         const idsEnviados = lista.filter( c => c._id ).map( c => String( c._id ) );
@@ -474,7 +446,8 @@ const updateMisContactos = async (req, res) => {
     }
 }
 
-// PATCH /api/perfilusuario/me/preferencias   body: { notificaciones?: boolean, correos?: boolean }
+// ---------- Preferencias de comunicación ----------
+
 const updateMisPreferencias = async (req, res) => {
     try {
         const { notificaciones, correos } = req.body;
@@ -508,15 +481,7 @@ const updateMisPreferencias = async (req, res) => {
 }
 
 export {
-    createPerfilUsuario,
-    getPerfilUsuario,
-    updatePerfilUsuario,
-    cambiarEstadoPerfilUsuario,
-    getMiPerfil,
-    updateMiPerfil,
-    updateMiFoto,
-    updateMiCertificado,
-    descargarMiCertificado,
-    updateMisContactos,
-    updateMisPreferencias
+    createPerfilUsuario, updatePerfilUsuario, getMiPerfil,
+    updateMiPerfil, updateMiFoto, updateMiCertificado,
+    descargarMiCertificado, updateMisContactos, updateMisPreferencias
 }

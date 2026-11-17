@@ -1,14 +1,11 @@
 import { Router } from 'express';
-import { createContactoEmergencia, getContactoEmergencia, updateContactoEmergencia, cambiarEstadoContactoEmergencia } from '../controllers/contactoEmergencia.controllers.js';
+import { updateContactoEmergencia } from '../controllers/contactoEmergencia.controllers.js';
 import { authMiddleware } from '../middlewares/authenticate.middlewares.js';
+import { authorizationMiddleware } from '../middlewares/authorizationMiddleware.middlewares.js';
 
-// Crear una instancia de las rutas de express
 const router = Router();
 
-// Define las rutas para los contactos
-router.post('/', authMiddleware, createContactoEmergencia);
-router.get('/:id', authMiddleware, getContactoEmergencia);
-router.patch('/:id', authMiddleware, updateContactoEmergencia);
-router.patch('/:id/status', authMiddleware, cambiarEstadoContactoEmergencia);
+// Solo el administrador edita los contactos de otro usuario
+router.patch('/:id', [ authMiddleware, authorizationMiddleware(['Administrador']) ], updateContactoEmergencia);
 
 export default router;

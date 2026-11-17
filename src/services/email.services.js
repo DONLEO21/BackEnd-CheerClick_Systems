@@ -84,5 +84,33 @@ const sendCorreoCambiadoEmail = async (to, nombre, nuevoEmail) => {
   });
 };
 
-export { sendResetCodeEmail, sendSolicitudEmail, sendCorreoCambiadoEmail };
+const sendContrasenaCambiadaEmail = async (to, nombre) => {
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    to: to,
+    subject: 'Tu contraseña fue cambiada - CheerClick',
+    html: `
+            <div style="font-family:Arial,sans-serif;max-width:440px;margin:auto;border:1px solid #e4e4e7;border-radius:12px;padding:24px;">
+                <h2 style="text-align:center;color:#18181b;margin-top:0;">Contraseña actualizada</h2>
+                <p style="color:#3f3f46;line-height:1.5;">Hola ${nombre}. La contraseña de tu cuenta fue cambiada. Si no fuiste tú, contacta al club de inmediato.</p>
+            </div>`
+  });
+};
+
+const sendCambioCuentaEmail = async (to, nombre, mensaje) => {
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    to: to,
+    subject: 'Novedad en tu cuenta - CheerClick',
+    html: `
+            <div style="font-family:Arial,sans-serif;max-width:440px;margin:auto;border:1px solid #e4e4e7;border-radius:12px;padding:24px;">
+                <h2 style="text-align:center;color:#18181b;margin-top:0;">Novedad en tu cuenta</h2>
+                <p style="color:#3f3f46;line-height:1.5;">Hola ${nombre}. ${mensaje}</p>
+            </div>`
+  });
+};
+
+export { sendResetCodeEmail, sendSolicitudEmail, sendCorreoCambiadoEmail, sendContrasenaCambiadaEmail, sendCambioCuentaEmail };
+
+
 
