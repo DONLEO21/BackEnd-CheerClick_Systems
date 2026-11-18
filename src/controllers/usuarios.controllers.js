@@ -1,4 +1,4 @@
-import { dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbFindUserByEmail, dbGenerarCodigo, PREFIJOS } from "../services/usuarios.services.js";
+import { dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbFindUserByEmail, dbGenerarCodigo, dbValidarNivelYPlan, PREFIJOS } from "../services/usuarios.services.js";
 import { generarPassword } from "../helpers/bcrypt.helpers.js";
 import { sendCorreoCambiadoEmail, sendCambioCuentaEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
@@ -27,7 +27,7 @@ const sinContrasena = (doc) => {
     return obj;
 }
 
-// POST /api/usuarios  (solo administrador): nace aprobada, activa y con código
+// Crear ub usuario por el admin
 const createUsuario = async (req, res) => {
     try {
         const usuario = req.body;
@@ -50,6 +50,10 @@ const createUsuario = async (req, res) => {
             return res.status(400).json({ errors: { contrasena: 'La contraseña debe tener mínimo 8 caracteres' } });
         }
 
+        // Nivel y plan según el rol (lo que no se exige, si viene, se valida igual)
+        const errorsNP = await dbValidarNivelYPlan(usuario, REQUISITOS_ROL[usuario.rol]);
+        if (errorsNP) return res.status(400).json({ errors: errorsNP });
+
         if (usuario.email) usuario.email = String(usuario.email).trim().toLowerCase();
 
         // Sin filtrar por status: un correo de cuenta inhabilitada sigue ocupado
@@ -68,7 +72,8 @@ const createUsuario = async (req, res) => {
         responderError(res, error, 'Error al registrar usuario');
     }
 }
-// No cambia contraseña, rol ni status
+
+// actualizar un usuario por el admin
 const updateUsuario = async (req, res) => {
     try {
         const id = req.params.id;
@@ -87,8 +92,8 @@ const updateUsuario = async (req, res) => {
         delete inputData.resetAttempts;
         delete inputData.codigo;
         delete inputData.estadoSolicitud;
-        delete inputData.rol;       
-        delete inputData.status;   
+        delete inputData.rol;
+        delete inputData.status;
 
         // Correo: en minúscula y sin repetir
         if (inputData.email) {
@@ -100,6 +105,15 @@ const updateUsuario = async (req, res) => {
                     return res.status(409).json({ errors: { email: 'Este correo ya está registrado' } });
                 }
             }
+        }
+
+        // Si el admin cambia nivel o plan, se validan igual
+        if (inputData.nivel !== undefined || inputData.planAsociado !== undefined) {
+            const errorsNP = await dbValidarNivelYPlan(
+                { nivel: inputData.nivel ?? actual.nivel, planAsociado: inputData.planAsociado ?? actual.planAsociado },
+                REQUISITOS_ROL[actual.rol]
+            );
+            if (errorsNP) return res.status(400).json({ errors: errorsNP });
         }
 
         const data = await dbUpdateUsuario(id, inputData);

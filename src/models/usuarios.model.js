@@ -4,31 +4,31 @@ import { Schema, model } from "mongoose";
 const usuarioSchema = new Schema({
 
     nombre: {
-        type: String,             //Tipo de dato
-        required: [true, 'El nombre es obligatorio'],           //Regla: Es Obligatorio
+        type: String,
+        required: [true, 'El nombre es obligatorio'],
         trim: true
     },
     apellido: {
-        type: String,           
-        required: [true, 'El apellido es obligatorio'],          
+        type: String,
+        required: [true, 'El apellido es obligatorio'],
         trim: true
     },
     nivel: {
         type: Schema.Types.ObjectId,
-        ref: 'Nivel',   
-        // required: [
-        //     function () { return ['Atleta', 'Entrenador'].includes(this.rol); },
-        //     'El nivel es obligatorio'
-        // ],        
+        ref: 'Nivel',
+        required: [
+            function () { return ['Atleta', 'Entrenador'].includes(this.rol); },
+            'El nivel es obligatorio'
+        ],
         default: null
     },
     planAsociado: {
         type: Schema.Types.ObjectId,
-        ref: 'planAsociado',    
+        ref: 'planAsociado',
         required: [
             function () { return this.rol === 'Atleta'; },
             'El plan es obligatorio'
-        ], 
+        ],
         default: null
     },
     email: {
@@ -73,7 +73,7 @@ const usuarioSchema = new Schema({
         notificaciones: { type: Boolean, default: true },
         correos:        { type: Boolean, default: true }
     },
-    // Recuperación de contraseña. 
+    // Recuperación de contraseña.
     resetCodeHash: {
         type: String,
         select: false
@@ -87,7 +87,7 @@ const usuarioSchema = new Schema({
         default: 0,
         select: false
     }
-}, 
+},
 //Opciones del esquema
 {
     timestamps: true

@@ -62,6 +62,8 @@ app.use('/api/niveles', nivelesRoute );
 app.use('/api/competencias', competenciasRoute);
 app.use('/api/inscripciones_competencias', inscripciones_competenciasRoute);
 
+app.use( '/api/notificaciones' , notificacionesRoute)
+
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
 });
