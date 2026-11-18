@@ -1,11 +1,11 @@
 info:
-  name: Actualizar todas las propiedades de los usuarios
+  name: Mis preferencias
   type: http
-  seq: 3
+  seq: 8
 
 http:
-  method: PUT
-  url: http://localhost:3000/api/usuarios
+  method: PATCH
+  url: http://localhost:3000/api/perfilusuario/me/preferencias
   auth: inherit
 
 settings:

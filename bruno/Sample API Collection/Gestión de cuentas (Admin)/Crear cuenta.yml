@@ -1,11 +1,11 @@
 info:
-  name: Eliminar contacto de emergencia
+  name: Crear cuenta
   type: http
-  seq: 4
+  seq: 8
 
 http:
-  method: DELETE
-  url: http://localhost:3000/api/contactoEmergencia/6ad6488db4ebffcb1fe741d6
+  method: POST
+  url: http://localhost:3000/api/usuarios
   auth: inherit
 
 settings:

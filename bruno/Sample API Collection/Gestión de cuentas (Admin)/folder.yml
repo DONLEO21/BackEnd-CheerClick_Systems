@@ -1,0 +1,7 @@
+info:
+  name: Gestión de cuentas (Admin)
+  type: folder
+  seq: 5
+
+request:
+  auth: inherit

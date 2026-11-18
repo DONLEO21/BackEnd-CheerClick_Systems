@@ -1,0 +1,22 @@
+info:
+  name: Olvidé contraseña
+  type: http
+  seq: 3
+
+http:
+  method: POST
+  url: http://localhost:3000/api/auth/olvide-contrasena
+  body:
+    type: json
+    data: |-
+      {
+        "email": "amyleeespanol@gmail.com"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+  forwardAuthorizationHeader: false
