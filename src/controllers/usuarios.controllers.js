@@ -1,4 +1,4 @@
-import { dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbFindUserByEmail, dbGenerarCodigo, dbValidarNivelYPlan, PREFIJOS } from "../services/usuarios.services.js";
+import { dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbFindUserByEmail, dbGenerarCodigo, dbValidarNivelYPlan, REQUISITOS_ROL, PREFIJOS } from "../services/usuarios.services.js";
 import { generarPassword } from "../helpers/bcrypt.helpers.js";
 import { sendCorreoCambiadoEmail, sendCambioCuentaEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
