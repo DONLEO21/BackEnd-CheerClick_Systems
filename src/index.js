@@ -6,7 +6,15 @@ import contactoEmergenciaRoute from './routes/contactoEmergencia.routes.js'
 import perfilUsuarioRoute from './routes/perfilUsuario.routes.js'
 import authRoute from './routes/auth.routes.js'
 import path from 'node:path';
+
 import notificacionesRoute from './routes/notificaciones.routes.js' //EsModule
+
+import horariosRoute from './routes/horarios.routes.js';
+import plantilla_horariosRoute from './routes/plantilla_horarios.routes.js'
+import nivelesRoute from './routes/niveles.routes.js'
+import competenciasRoute from './routes/competencias.routes.js'
+import inscripciones_competenciasRoute from './routes/inscripciones_competencias.routes.js'
+
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
 
@@ -33,8 +41,16 @@ app.get('/health', (req, res) => {
 app.use( '/api/usuarios' , usuariosRoute );
 app.use( '/api/contactoemergencia' , contactoEmergenciaRoute);
 app.use( '/api/perfilusuario' , perfilUsuarioRoute) ;
+
 app.use( '/api/auth' , authRoute)
 app.use( '/api/notificaciones' , notificacionesRoute)
+app.use( '/api/auth' , authRoute);
+app.use('/api/horarios', horariosRoute);
+app.use('/api/plantilla_horario', plantilla_horariosRoute);
+app.use('/api/niveles', nivelesRoute );
+app.use('/api/competencias', competenciasRoute);
+app.use('/api/inscripciones_competencias', inscripciones_competenciasRoute);
+
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);
 });
