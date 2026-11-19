@@ -1,11 +1,11 @@
 info:
-  name: Actualizar parcialmente las propiedades de los usuarios
+  name: Marcar una noti como leída
   type: http
-  seq: 4
+  seq: 2
 
 http:
   method: PATCH
-  url: http://localhost:3000/api/usuarios
+  url: http://localhost:3000/api/notificaciones/{{idNotificacion}}/leida
   auth: inherit
 
 settings:

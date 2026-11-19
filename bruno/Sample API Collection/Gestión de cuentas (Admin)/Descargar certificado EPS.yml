@@ -1,11 +1,11 @@
 info:
-  name: Eiminar categoria por ID
+  name: Descargar certificado EPS
   type: http
-  seq: 3
+  seq: 4
 
 http:
-  method: DELETE
-  url: http://localhost:3000/api/eps/6ad2477714d500eaf759d43c
+  method: GET
+  url: http://localhost:3000/api/usuarios/{{idUsuario}}/certificado-eps
   auth: inherit
 
 settings:

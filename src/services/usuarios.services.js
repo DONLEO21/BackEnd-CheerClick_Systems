@@ -3,25 +3,48 @@
 import mongoose from "mongoose"
 import usuarioModel from "../models/usuarios.model.js"
 import contadorModel from "../models/contador.model.js"
-
+import NivelModel from "../models/nivel.model.js"
+import PlanAsociadoModel from "../models/planAsociado.model.js"
 
 const dbGetUsuarioConPlan = async ( id ) => {
-    const consulta = usuarioModel.findById( id ).select('-contrasena');
-
-    if( mongoose.models.Nivel ) {
-        consulta.populate({ path: 'nivel', select: 'nombre diasEntreno imagenEntre' });
-    }
-    if( mongoose.models.planAsociado ) {
-        consulta.populate({ path: 'planAsociado', select: 'nombre valor' });
-    }
-
-    return await consulta;
+    return await usuarioModel.findById( id )
+        .select('-contrasena')
+        .populate({ path: 'nivel', model: NivelModel, select: 'nombre diasEntreno imagenEntre' })
+        .populate({ path: 'planAsociado', model: PlanAsociadoModel, select: 'nombre valor' });
 }
 
+// Valida nivel y plan, que existan y que estén activos
+const dbValidarNivelYPlan = async ( { nivel, planAsociado }, exigir = { nivel: true, planAsociado: true } ) => {
+    const errors = {};
+
+    const revisar = async ( campo, valor, Modelo, nombre, obligatorio ) => {
+        if( ! valor ) {
+            if( obligatorio ) errors[campo] = `El ${nombre} es obligatorio`;
+            return;
+        }
+        if( ! mongoose.isValidObjectId( valor ) ) {
+            errors[campo] = `El ${nombre} no es un id válido`;
+            return;
+        }
+        const encontrado = await Modelo.findOne({ _id: valor, estado: 'Activo' }).select('_id');
+        if( ! encontrado ) errors[campo] = `El ${nombre} no existe o está inactivo`;
+    };
+
+    await revisar( 'nivel', nivel, NivelModel, 'nivel', exigir.nivel );
+    await revisar( 'planAsociado', planAsociado, PlanAsociadoModel, 'plan', exigir.planAsociado );
+
+    return Object.keys( errors ).length > 0 ? errors : null;
+}
+
+// Qué exige cada rol
+const REQUISITOS_ROL = {
+    Atleta:        { nivel: true,  planAsociado: true  },
+    Entrenador:    { nivel: true,  planAsociado: false },
+    Administrador: { nivel: false, planAsociado: false }
+};
 
 const PREFIJOS = { Atleta: 'AT', Entrenador: 'EN', Administrador: 'AD' };
 
-// Genera el código del rol: AT001, EN001, AD001...
 const dbGenerarCodigo = async ( rol ) => {
     const prefijo = PREFIJOS[rol];
 
@@ -34,7 +57,7 @@ const dbGenerarCodigo = async ( rol ) => {
     return prefijo + String( contador.seq ).padStart( 3, '0' );
 }
 
-// Busca por correo sin filtrar por status: el login necesita distinguir las cuentas desactivadas
+// Busca por correo sin filtrar por status
 const dbFindUserByEmail = async ( email ) => {
     return await usuarioModel.findOne({ email: email });
 }
@@ -52,7 +75,6 @@ const dbCountUsuarios = async ( filtro = {} ) => {
     return await usuarioModel.countDocuments( filtro );
 }
 
-//TODO: Conectar el modelo de usuarios con la base de datos
 const dbCreateUsuario = async ( newUsuario ) => {
     return await usuarioModel.create(newUsuario);
 }
@@ -80,15 +102,7 @@ const dbGetUserByEmail = async ( email , status = true) => {
 }
 
 export {
-    dbCreateUsuario,
-    dbGetUsuario,
-    dbUpdateUsuario,
-    dbGetUserByEmail,
-    dbGetUserForReset,
-    dbGenerarCodigo,
-    PREFIJOS,
-    dbFindUserByEmail,
-    dbListUsuarios,
-    dbCountUsuarios,
-    dbGetUsuarioConPlan
+    dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbGetUserByEmail,
+    dbGetUserForReset, dbGenerarCodigo, PREFIJOS, dbFindUserByEmail, REQUISITOS_ROL,
+    dbListUsuarios, dbCountUsuarios, dbGetUsuarioConPlan, dbValidarNivelYPlan
 }

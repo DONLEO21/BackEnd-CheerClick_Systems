@@ -1,17 +1,11 @@
 info:
-  name: Actualizar EPS
+  name: Aprobar/Rechazar solicitud
   type: http
   seq: 4
 
 http:
   method: PATCH
-  url: http://localhost:3000/api/eps/6ad11a82b4db757a74383c79
-  body:
-    type: json
-    data: |-
-      {
-        "nombre" : "Capital Salud"
-      }
+  url: http://localhost:3000/api/usuarios/solicitudes/{{idUsuario}}/aprobar
   auth: inherit
 
 settings:
