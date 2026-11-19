@@ -1,47 +1,32 @@
-import mongoose from "mongoose";
 import crypto from "node:crypto";
 import { verifyPassword, generarPassword } from "../helpers/bcrypt.helpers.js";
-import { dbGetUserByEmail, dbGetUserForReset, dbUpdateUsuario, dbCreateUsuario, dbFindUserByEmail } from "../services/usuarios.services.js";
+import { dbGetUserByEmail, dbGetUserForReset, dbUpdateUsuario, dbCreateUsuario, dbFindUserByEmail, dbValidarNivelYPlan } from "../services/usuarios.services.js";
 import { generateToken } from "../helpers/jwt.helpers.js";
 import { sendResetCodeEmail, sendContrasenaCambiadaEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
 
-// Registro público: siempre Atleta, pendiente de aprobación
+// Registro público
 const registrarUsuario = async (req, res) => {
   try {
     // Se toman estos campos; todo lo demás del body se ignora
-    const { nombre, apellido, contrasena, planAsociado } = req.body;
+    const { nombre, apellido, contrasena, nivel, planAsociado } = req.body;
     const email = req.body.email?.trim().toLowerCase();
 
     const errors = {};
 
+    if (!nombre?.trim()) errors.nombre = 'El nombre es obligatorio';
+    if (!apellido?.trim()) errors.apellido = 'El apellido es obligatorio';
     if (!email) errors.email = 'El correo es obligatorio';
 
     if (!contrasena || contrasena.length < 8) {
       errors.contrasena = 'La contraseña debe tener mínimo 8 caracteres';
     }
 
-    // PENDIENTE DEL MERGE: cuando llegue el módulo de planes, el plan pasa a ser obligatorio
-    if (planAsociado && !mongoose.isValidObjectId(planAsociado)) {
-      errors.planAsociado = 'El plan no es un id válido';
-    }
+    // Nivel y plan: obligatorios, existentes y activos
+    Object.assign(errors, await dbValidarNivelYPlan({ nivel, planAsociado }) ?? {});
 
     if (Object.keys(errors).length > 0) {
       return res.status(400).json({ errors });
-    }
-
-    // Solo se valida que el plan exista si el módulo de planes ya está cargado
-    if (planAsociado && mongoose.models.planAsociado) {
-      const planFound = await mongoose.models.planAsociado.findOne({
-        _id: planAsociado,
-        estado: 'Activo'
-      });
-
-      if (!planFound) {
-        return res.status(400).json({
-          errors: { planAsociado: 'El plan no existe o está inactivo' }
-        });
-      }
     }
 
     if (await dbFindUserByEmail(email)) {
@@ -51,17 +36,18 @@ const registrarUsuario = async (req, res) => {
     }
 
     const nuevo = await dbCreateUsuario({
-      nombre,
-      apellido,
+      nombre: nombre.trim(),
+      apellido: apellido.trim(),
       email,
       contrasena: generarPassword(contrasena),
+      nivel,
       planAsociado,
       rol: 'Atleta',
       estadoSolicitud: 'Pendiente',
       status: true
     });
 
-    // Sin token: no puede entrar hasta que el admin apruebe
+    // Sin token: no puede ingresar hasta que el admin apruebe
     res.status(201).json({
       msg: 'Solicitud registrada. Un administrador validará tu cuenta',
       data: {
@@ -83,17 +69,13 @@ const registrarUsuario = async (req, res) => {
 
     if (error.name === 'ValidationError') {
       const errors = {};
-
       for (const field in error.errors) {
         errors[field] = error.errors[field].message;
       }
-
       return res.status(400).json({ errors });
     }
 
-    res.status(500).json({
-      msg: 'No se pudo registrar la solicitud'
-    });
+    res.status(500).json({ msg: 'No se pudo registrar la solicitud' });
   }
 };
 
@@ -346,10 +328,6 @@ const restablecerContrasena = async (req, res) => {
 };
 
 export {
-  registrarUsuario,
-  loginUsuario,
-  renovarToken,
-  olvideContrasena,
-  verificarCodigo,
-  restablecerContrasena,
+  registrarUsuario, loginUsuario, renovarToken,
+  olvideContrasena, verificarCodigo, restablecerContrasena,
 };
