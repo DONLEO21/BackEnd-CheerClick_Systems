@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createInscripcion_competencia, deleteInscripcion_competencia, getInscripcion_competencia, getInscripciones_competencias, updateInscripcion_competencia } from "../controllers/inscripciones_competencias.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
-import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middleware.js";
+import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
 const router = Router();
 

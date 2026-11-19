@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { createTipoHabilidad, deleteTipoHabilidad, getTipoHabilidad, getTipoHabilidades, updateTipoHabilidad } from '../controllers/tipoHabilidad.controllers.js';
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
-import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middleware.js";
+import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
 const router = Router();
 

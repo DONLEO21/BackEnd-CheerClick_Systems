@@ -1,4 +1,4 @@
-import usuarioModel from "../models/usuarios.models.js";
+import usuarioModel from "../models/usuarios.model.js";
 import { errorHttp } from "./errores.helpers.js";
 
 // Niveles que dirige un entrenador.

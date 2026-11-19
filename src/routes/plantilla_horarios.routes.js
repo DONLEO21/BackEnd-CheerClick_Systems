@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createPlantillahorario, deletePlantillahorario, getPlantillahorario, getPlantillahorarios, updatePlantillahorario } from "../controllers/plantilla_horarios.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
-import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middleware.js";
+import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
 const router = Router(); // Crear una instancia de las rutas de express
 

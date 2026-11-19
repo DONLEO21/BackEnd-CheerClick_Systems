@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createNivel, getNivel, getNiveles, updateNivel } from "../controllers/niveles.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
-import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middleware.js";
+import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
 const router = Router();
 

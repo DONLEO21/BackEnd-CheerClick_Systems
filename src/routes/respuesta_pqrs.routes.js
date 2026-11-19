@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { createRespuesta_pqrs, deleteRespuesta_pqrs, getrespuesta_pqrs, getRespuesta_pqrs, updateRespuesta_pqrs } from "../controllers/respuesta_pqrs.crontrollers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
-import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middleware.js";
+import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
 const router = Router();
 

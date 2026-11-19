@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import AsistenciaModel, { TIPOS_NOVEDAD } from "../models/asistencia.model.js";
 import JustificacionModel from "../models/justificacion.model.js";
 import RendimientoModel from "../models/rendimiento.models.js";
-import usuarioModel from "../models/usuarios.models.js";
+import usuarioModel from "../models/usuarios.model.js";
 import { validarAccesoNivel } from "../helpers/acceso.helpers.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
 import { esFechaISO, hoyISO } from "../helpers/fecha.helpers.js";

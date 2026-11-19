@@ -3,7 +3,7 @@ import {
     createJustificacion, deleteJustificacion, getJustificacion, updateJustificacion
 } from "../controllers/justificacion.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
-import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middleware.js";
+import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
 const router = Router();
 
