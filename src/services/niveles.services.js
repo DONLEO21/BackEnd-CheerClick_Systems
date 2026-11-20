@@ -27,6 +27,11 @@ const dbGetNivel = async (query = {}, user) => {
     return await NivelModel.find(filter).populate('usuario', 'nombre apellido');
 }
 
+// Público (registro): solo los niveles ACTIVOS y solo los datos que el formulario necesita
+const dbGetNivelesPublico = async () => {
+    return await NivelModel.find({ estado: 'Activo' }).select('nombre').sort({ nombre: 1 });
+}
+
 const dbUpdateNivel = async (id, nivelUpdate) => {
     return await NivelModel.findOneAndUpdate(
         { _id: id },
@@ -50,5 +55,6 @@ export {
     dbCreateNivel,
     dbGetNivel,
     dbUpdateNivel,
-    dbGetNiveles
+    dbGetNiveles,
+    dbGetNivelesPublico
 }

@@ -1,5 +1,6 @@
 // const express = require('express'); //CommonJS
 import express from 'express';//EsModule
+import cors from 'cors';
 
 import usuariosRoute from './routes/usuarios.routes.js'; //EsModule_
 import contactoEmergenciaRoute from './routes/contactoEmergencia.routes.js'
@@ -50,8 +51,16 @@ const app = express();     //Instancia de express
 
 conexion();      //Ejecuta la conexion a la base de datos
 
+// CORS: solo si se define CORS_ORIGIN (lista separada por comas, p. ej. https://app.midominio.com).
+// En desarrollo no hace falta: el frontend usa el proxy de Vite (mismo origen).
+const origenesPermitidos = (process.env.CORS_ORIGIN ?? '').split(',').map((o) => o.trim()).filter(Boolean);
+if (origenesPermitidos.length > 0) {
+    app.use(cors({ origin: origenesPermitidos, allowedHeaders: ['Content-Type', 'X-Token'] }));
+}
+
 //Habilita a la aplicacion para intepretar JSON
-app.use(express.json());
+// (límite ampliado: los comprobantes de pago viajan como imagen/PDF en base64 dentro del JSON)
+app.use(express.json({ limit: '5mb' }));
 
 // Solo las fotos son públicas. Los certificados no se envian aqui
 app.use('/uploads/fotos', express.static(path.resolve('uploads/fotos')));

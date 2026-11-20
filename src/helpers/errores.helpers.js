@@ -16,10 +16,11 @@ export const responderError = (res, error, msgGenerico) => {
     console.error(error);
 
     if (error.status) {
-        return res.status(error.status).json({ msg: error.message });
+        return res.status(error.status).json({ success: false, msg: error.message });
     }
     if (error.name === 'CastError') {
         return res.status(400).json({
+            success: false,
             msg: 'Error en el formato del ID',
             [error.path]: `El identificador ${error.value} no tiene el formato valido que requiere MongoDB`
         });
@@ -27,6 +28,7 @@ export const responderError = (res, error, msgGenerico) => {
     if (error.code === 11000) {
         const field = Object.keys(error.keyValue)[0];
         return res.status(400).json({
+            success: false,
             msg: `Error por duplicado en el campo '${field}'`,
             [field]: `El ${field} ${error.keyValue[field]} ya se encuentra registrado`
         });
@@ -34,7 +36,7 @@ export const responderError = (res, error, msgGenerico) => {
     if (error.name === 'ValidationError') {
         const errors = {};
         for (const field in error.errors) errors[field] = error.errors[field].message;
-        return res.status(400).json({ errors });
+        return res.status(400).json({ success: false, errors });
     }
-    return res.status(500).json({ msg: msgGenerico });
+    return res.status(500).json({ success: false, msg: msgGenerico });
 };

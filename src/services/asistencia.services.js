@@ -171,15 +171,23 @@ const dbGuardarAsistenciaDia = async (usuarioSesion, { nivel, fecha, registros }
         },
     })));
 
+    // La asistencia YA quedó guardada (bulkWrite). Si falla la sincronización de una justificación no se
+    // responde con error (el frontend mostraría "no se pudo guardar" aunque sí se guardó): se informa como advertencia.
+    const advertencias = [];
     const guardadas = await AsistenciaModel.find({ nivel, fecha, usuario: { $in: lista.map((r) => r.usuario) } });
     for (const a of guardadas) {
-        await sincronizarJustificacion(a, a.tipoNovedad, {
-            motivo: porUsuario.get(String(a.usuario))?.motivo,
-            revisorId: usuarioSesion._id,
-        });
+        try {
+            await sincronizarJustificacion(a, a.tipoNovedad, {
+                motivo: porUsuario.get(String(a.usuario))?.motivo,
+                revisorId: usuarioSesion._id,
+            });
+        } catch (error) {
+            console.error('No se pudo sincronizar la justificación de', String(a._id), error);
+            advertencias.push(`No se pudo actualizar la justificación de un atleta (${error.message})`);
+        }
     }
 
-    return await dbGetAsistencia({ nivel, fecha });
+    return { registros: await dbGetAsistencia({ nivel, fecha }), advertencias };
 };
 
 const dbCreateAsistencia = async (usuarioSesion, { usuario, nivel, fecha, tipoNovedad, motivo } = {}) => {

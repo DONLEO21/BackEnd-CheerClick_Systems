@@ -12,7 +12,13 @@ const planAsociadoSchema = new Schema({
         type: Number,
         required: [true, 'El valor del plan es obligatorio'],
         trim: true,
-        min: [true, 'No se permiten numeros negativos dentro del valor']
+        min: [1, 'El valor del plan debe ser mayor a 0']
+    },
+    descripcion: {
+        type: String,
+        trim: true,
+        maxlength: [200, 'La descripción no puede superar los 200 caracteres'],
+        default: ''
     },
     estado: {
         type: String,

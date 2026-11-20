@@ -1,4 +1,4 @@
-import { dbCreateNivel, dbGetNivel, dbGetNiveles, dbUpdateNivel } from "../services/niveles.services.js";
+import { dbCreateNivel, dbGetNivel, dbGetNiveles, dbGetNivelesPublico, dbUpdateNivel } from "../services/niveles.services.js";
 
 const createNivel = async (req, res) => {
     try {
@@ -37,6 +37,17 @@ const getNivel = async (req, res) => {
         const data = await dbGetNivel(req.query, req.userFound); 
         res.json({ msg: 'Consulta los niveles', data: data });
 
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ msg: 'No se pudo consultar los niveles' });
+    }
+}
+
+// GET /api/niveles/publico  (SIN token): niveles activos para el formulario de registro
+const getNivelesPublico = async (req, res) => {
+    try {
+        const data = await dbGetNivelesPublico();
+        res.json({ msg: 'Niveles disponibles', data });
     } catch (error) {
         console.error(error);
         res.status(500).json({ msg: 'No se pudo consultar los niveles' });
@@ -109,5 +120,6 @@ export {
     createNivel,
     getNivel,
     updateNivel,
-    getNiveles
+    getNiveles,
+    getNivelesPublico
 }

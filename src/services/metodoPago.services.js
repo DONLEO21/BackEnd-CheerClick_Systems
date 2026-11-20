@@ -13,10 +13,16 @@ const dbDeleteMetodoPago = async (id) => {
 }
 
 const dbUpdateMetodoPago = async (id, metodoPagoUpdate) => {
+    // findOneAndUpdate no ejecuta los hooks del documento: se aplican aquí las mismas reglas
+    const cambios = { ...metodoPagoUpdate };
+    const actual = cambios.nombre === undefined ? await metodoPagoModel.findById(id).select('nombre') : null;
+    const nombre = cambios.nombre ?? actual?.nombre;
+    if (/^efectivo$/i.test(String(nombre ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim())) cambios.qr = '';
+
     return await metodoPagoModel.findOneAndUpdate(
         {_id: id},
-        metodoPagoUpdate,
-        {new : true}
+        cambios,
+        {new : true, runValidators: true}
     );
 }
 
