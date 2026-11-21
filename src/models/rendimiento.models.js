@@ -7,6 +7,13 @@ const rendimientoSchema = new Schema(
       ref: "asistencia",
       required: [true, "La asistencia es obligatoria"],
     },
+    // Atleta evaluado. Las consultas y el listado de rendimiento agrupan por este campo
+    // (antes faltaba en el esquema: Mongoose lo descartaba al guardar).
+    usuario: {
+      type: Schema.Types.ObjectId,
+      ref: "usuario",
+      index: true,
+    },
     habilidad: {
       type: Schema.Types.ObjectId,
       ref: "habilidad",

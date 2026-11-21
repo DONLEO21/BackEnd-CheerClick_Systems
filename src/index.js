@@ -43,13 +43,20 @@ import competenciasRoute from './routes/competencias.routes.js'
 import inscripciones_competenciasRoute from './routes/inscripciones_competencias.routes.js'
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
+import { iniciarJobMensualidades } from './jobs/mensualidades.job.js';
+import { migrarIndicesAsistencia } from './helpers/migraciones.helpers.js'; // Generación automática de mensualidades
 
 //Iniciar servidor 
 const port= process.env.PORT || 3001;
 
 const app = express();     //Instancia de express
 
-conexion();      //Ejecuta la conexion a la base de datos
+// Conecta a la base de datos y, ya conectado, programa la generación mensual de mensualidades
+conexion().then(async () => {
+    // Índices de asistencia (elimina el único antiguo { usuario, horario } que impedía guardar más de un día)
+    await migrarIndicesAsistencia().catch((error) => console.error('[migración] no se pudieron actualizar los índices de asistencia', error));
+    iniciarJobMensualidades();
+});
 
 // CORS: solo si se define CORS_ORIGIN (lista separada por comas, p. ej. https://app.midominio.com).
 // En desarrollo no hace falta: el frontend usa el proxy de Vite (mismo origen).

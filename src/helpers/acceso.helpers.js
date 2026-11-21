@@ -1,14 +1,12 @@
 import usuarioModel from "../models/usuarios.model.js";
+import NivelModel from "../models/nivel.model.js";
 import { errorHttp } from "./errores.helpers.js";
 
-// Niveles que dirige un entrenador.
-// PENDIENTE AL UNIRLO
+// Niveles que dirige un entrenador (el nivel guarda al entrenador asignado en el campo `usuario`).
+// BUG corregido: antes se usaba NivelModel sin importarlo y se consultaba un campo `entrenador` que no existe,
+// por lo que cualquier petición de un entrenador (asistencia, rendimiento…) terminaba en ReferenceError / 500.
 export const nivelesDelEntrenador = async (entrenadorId) => {
-    if (!NivelModel.schema.path('entrenador')) {
-        console.warn("Falta el campo 'entrenador' en el modelo Nivel: no se restringe por entrenador");
-        return null;
-    }
-    const niveles = await NivelModel.find({ entrenador: entrenadorId }).select('_id').lean();
+    const niveles = await NivelModel.find({ usuario: entrenadorId }).select('_id').lean();
     return niveles.map((n) => n._id);
 };
 

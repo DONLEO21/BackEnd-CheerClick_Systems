@@ -18,6 +18,11 @@ const metodoPagoSchema = new Schema({
         type: String,
         trim : true,
         default: ''
+    },
+    // ¿El atleta debe adjuntar comprobante al pagar con este método? "Efectivo" siempre es false.
+    requiereComprobante : {
+        type: Boolean,
+        default: true
     }
 },{
     timestamps : true,
@@ -28,7 +33,7 @@ const metodoPagoSchema = new Schema({
 const esEfectivo = (nombre) => String(nombre ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase() === 'efectivo';
 
 metodoPagoSchema.pre('validate', function () {
-    if (esEfectivo(this.nombre)) this.qr = '';
+    if (esEfectivo(this.nombre)) { this.qr = ''; this.requiereComprobante = false; }
 });
 
 const metodoPagoModel = model('metodoPago', metodoPagoSchema);

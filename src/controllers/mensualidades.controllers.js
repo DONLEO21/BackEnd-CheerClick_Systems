@@ -1,4 +1,6 @@
 import { dbCreateMensualidad, dbGetMensualidad, dbGetMensualidades, dbUpdateMensualidad } from "../services/mensualidades.services.js";
+import { generarMensualidadesDelMes } from "../services/generacionMensualidades.services.js";
+import { responderError } from "../helpers/errores.helpers.js";
 
 const getFiltroPorRol = (user) => {
     switch (user.rol) {
@@ -38,6 +40,21 @@ const CreateMensualidad = async (req, res) => {
     }
 };
 
+// POST /api/mensualidades/generar  { periodo?: 'AAAA-MM' }  (solo administrador)
+// Ejecuta la misma generación del cron (idempotente): útil para pruebas, demos o si el servidor estuvo apagado.
+const GenerarMensualidades = async (req, res) => {
+    try {
+        const resultado = await generarMensualidadesDelMes({ periodo: req.body?.periodo || undefined });
+        return res.status(200).json({
+            success: true,
+            msg: `Mensualidades de ${resultado.periodo}: ${resultado.creadas} creadas, ${resultado.omitidas} ya existían`,
+            data: resultado
+        });
+    } catch (error) {
+        responderError(res, error, 'No se pudieron generar las mensualidades');
+    }
+};
+
 const GetMensualidad = async (req, res) => {
     try {
         const filter = getFiltroPorRol(req.userFound);
@@ -53,7 +70,7 @@ const GetMensualidad = async (req, res) => {
         if (buscar) {
             const texto = buscar.toLowerCase();
             data = data.filter(m =>
-                `${m.usuario?.nombre} ${m.usuario?.apellido}`.toLowerCase().includes(texto)
+                `${m.usuario?.nombre} ${m.usuario?.apellido}`.toLowerCase().includes(texto) || (m.pago?.codigo ?? '').toLowerCase().includes(texto)
             );
         }
         if (estado) data = data.filter(m => m.pago?.estado === estado);
@@ -140,5 +157,6 @@ export {
     CreateMensualidad,
     GetMensualidad,
     UpdateMensualidad,
-    GetMensualidades
+    GetMensualidades,
+    GenerarMensualidades
 };

@@ -26,7 +26,10 @@ const getImplemento = async (req, res) => {
     try {
         // El atleta solo ve lo que se puede pedir
         const filtro = req.userFound.rol === 'Atleta' ? { estado: 'Disponible' } : {};
-        const data = await dbGetImplemento(filtro);
+        let data = await dbGetImplemento(filtro);
+        // ?buscar= filtra por nombre o por código (IM003)
+        const texto = String(req.query.buscar ?? '').trim().toLowerCase();
+        if (texto) data = data.filter((i) => `${i.nombre} ${i.codigo ?? ''}`.toLowerCase().includes(texto));
         res.status(200).json({ msg: 'Lista de implementos', data });
     } catch (error) {
         responderError(res, error, 'No se ha podido listar implementos');

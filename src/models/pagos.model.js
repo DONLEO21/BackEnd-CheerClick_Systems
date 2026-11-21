@@ -1,4 +1,5 @@
 import {Schema, model} from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 //Parte 1: Definir la estructura de datos de mi documento
 
@@ -7,7 +8,7 @@ const PagosSchema = new Schema(
     {
     estado : {
         type: String,
-        enum: ['Pagado', 'Vencido', 'Pendiente'],    //Tipo de dato
+        enum: ['Pagado', 'Vencido', 'Pendiente', 'Pendiente de confirmación'],   // 'Pendiente de confirmación': pago en efectivo ya solicitado    //Tipo de dato
         default : 'Pendiente',
         required : [true, 'El estado del pago es obligatorio'],    //Regla: Es OBLIGATORIO
         trim: true   //Modificador : 
@@ -26,7 +27,9 @@ const PagosSchema = new Schema(
     },
     comprobante:{
         type: String,
-        required : [true, 'La ruta del comprobante es obligatoria'],
+        // Un pago PENDIENTE (p. ej. la mensualidad generada automáticamente) aún no tiene comprobante
+        required : [function () { return this.estado === 'Pagado'; }, 'La ruta del comprobante es obligatoria'],
+        default: '',
         trim:true
     },
     observaciones: {
@@ -37,7 +40,8 @@ const PagosSchema = new Schema(
     metodoPago : {
         type: Schema.Types.ObjectId,
         ref : 'metodoPago',
-        required: [true, 'El ID del pago es obligatorio']
+        // Se elige al pagar; una mensualidad pendiente todavía no tiene método
+        required: [function () { return this.estado === 'Pagado'; }, 'El método de pago es obligatorio']
     },
     usuario: {
         type: Schema.Types.ObjectId,
@@ -51,6 +55,9 @@ const PagosSchema = new Schema(
 });
 
 //Parte 2: Definir el modelo. Dicho modelo esta atado al nombre de un documento
+
+// Código visible consecutivo PG001, PG002… (el _id interno se conserva para las relaciones)
+PagosSchema.plugin(pluginCodigo, 'PG');
 
 const PagosModel = model('Pagos', PagosSchema);//Nombre de la coleccion  - Nombre del esquema que define la estructura de los documentos 
 

@@ -9,13 +9,24 @@ const notificacionSchema = new Schema({
     
     },
     tipo:{ 
-        type: String, enum: ['seguridad', 'perfil', 'cuenta'], 
+        type: String, enum: ['seguridad', 'perfil', 'cuenta', 'pago'], 
         required: true 
+    },
+    titulo:{
+        type: String,
+        trim: true,
+        default: ''
     },
     mensaje:{ 
         type: String, 
         required: true, 
         trim: true 
+    },
+    // Ruta del frontend a la que lleva la notificación (p. ej. /atleta/pagos)
+    enlace:{
+        type: String,
+        trim: true,
+        default: ''
     },
     leida:{ 
         type: Boolean, 

@@ -8,7 +8,7 @@ const dbGetMensualidad = async (filter = {}) => {
     return await MensualidadModel.find(filter)
         .populate('planAsociado')
         .populate('pago')
-        .populate('usuario', 'nombre apellido email');
+        .populate('usuario', 'nombre apellido email codigo');
 };
 
 const dbUpdateMensualidad = async ( id, mensualidadUpdate) => {
@@ -20,7 +20,11 @@ const dbUpdateMensualidad = async ( id, mensualidadUpdate) => {
 }
 
 const dbGetMensualidades = async (id, filter = {}) => {
+    // Mismo populate que el listado: sin él el frontend no ve el estado/método/comprobante del pago tras enviarlo
     return await MensualidadModel.findOne({_id: id, ...filter})
+        .populate('planAsociado')
+        .populate('pago')
+        .populate('usuario', 'nombre apellido email codigo');
 }
 
 export{

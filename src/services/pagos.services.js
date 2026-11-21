@@ -6,7 +6,7 @@ import PagosModel from "../models/pagos.model.js"
 const dbReadPagos = async (filter = {}) => {
     return await PagosModel.find(filter)
         .populate('metodoPago')
-        .populate('usuario', 'nombre apellido email');
+        .populate('usuario', 'nombre apellido email codigo');
 };
 
 const dbInsertPago = async (newPago) => {

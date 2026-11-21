@@ -3,7 +3,6 @@ import ImplementoTallaModel from "../models/implementoTalla.model.js";
 import SolicitudImplementosModel from "../models/solicitudImplementos.model.js";
 import ResenaModel from "../models/resena.model.js";
 import { GRUPOS_POR_CATEGORIA, TALLAS_POR_GRUPO } from "../constants/tallas.js";
-import { generarCodigo } from "../helpers/codigo.helpers.js";
 import { errorValidacion } from "../helpers/errores.helpers.js";
 
 // Lista implementos con tallas, cantidad total, calificación promedio y # de reseñas
@@ -61,7 +60,7 @@ const dbSincronizarTallas = async (implementoId, tallas = []) => {
 };
 
 const dbCreateImplemento = async ({ tallas = [], ...datos }) => {
-    datos.codigo = await generarCodigo(ImplementoModel, 'IM');
+    delete datos.codigo;   // el código IM001… lo asigna el modelo (consecutivo atómico)
     const implemento = await ImplementoModel.create(datos);
 
     try {

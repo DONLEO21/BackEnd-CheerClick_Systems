@@ -23,7 +23,7 @@ const dbGetInscripcion_competencia = async (rol, usuarioId) => {
             populate: { path: 'nivel', select: 'nombre' }   // Nivel de cada competencia
         })
         // IMPORTANTE: se limitan los campos para NO exponer la contraseña (hash) del usuario
-        .populate('usuario', 'nombre apellido email')
+        .populate('usuario', 'nombre apellido email codigo')
         .populate('pago');
 }
 
@@ -46,7 +46,7 @@ const dbDeleteInscripcion_competencia = async (id, filtroExtra = {}) => {
 const dbGetInscripciones_competencias = async (id) => {
     return await Inscripciones_competenciasModel.findOne({ _id: id })
         .populate('competencia')
-        .populate('usuario', 'nombre apellido email')   // Sin la contraseña
+        .populate('usuario', 'nombre apellido email codigo')   // Sin la contraseña
         .populate('pago');
 }
 

@@ -1,5 +1,7 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
+// Código visible consecutivo IM001, IM002… (el _id interno se conserva para las relaciones)
 const implementoSchema = new Schema(
   {
     nombre: {
@@ -44,6 +46,8 @@ const implementoSchema = new Schema(
     versionKey: false,
   },
 );
+
+implementoSchema.plugin(pluginCodigo, "IM");
 
 const ImplementoModel = model("implemento", implementoSchema);
 

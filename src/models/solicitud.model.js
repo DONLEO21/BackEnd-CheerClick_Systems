@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const solicitudeSchema = new Schema(
   {
@@ -35,6 +36,9 @@ const solicitudeSchema = new Schema(
     versionKey: false,
   },
 );
+
+// Código visible consecutivo SL001, SL002… (el _id interno se conserva para las relaciones)
+solicitudeSchema.plugin(pluginCodigo, "SL");
 
 const SolicitudModel = model("solicitud", solicitudeSchema);
 

@@ -1,14 +1,19 @@
 import mongoose from "mongoose";
 import RendimientoModel from "../models/rendimiento.models.js";
 import AsistenciaModel from "../models/asistencia.model.js";
-//import HabilidadesModel from "../models/habilidades.model.js";
-import { dbGetUsuario } from "./usuarios.services.js";
+import HabilidadesModel from "../models/habilidades.model.js";
+import NotaModel from "../models/nota.model.js";
+import usuarioModel from "../models/usuarios.model.js";
+import perfilUsuarioModel from "../models/perfilUsuario.model.js";
 import { validarAccesoAtleta, validarAccesoNivel } from "../helpers/acceso.helpers.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
-import { esFechaISO, fechaADate, hoyISO } from "../helpers/fecha.helpers.js";
+import { calcularEdad, esFechaISO, fechaADate, hoyISO } from "../helpers/fecha.helpers.js";
 
 // Estado actual = la última evaluación de cada habilidad por atleta
+// Si la evaluación no trae `usuario` (documentos antiguos) se toma de su asistencia.
 const ultimaCalificacion = (match = {}) => [
+    { $lookup: { from: AsistenciaModel.collection.name, localField: 'asistencia', foreignField: '_id', as: '_asis' } },
+    { $addFields: { usuario: { $ifNull: ['$usuario', { $arrayElemAt: ['$_asis.usuario', 0] }] } } },
     { $match: match },
     { $sort: { fecha: -1, createdAt: -1 } },
     {
@@ -37,7 +42,7 @@ const dbGetRendimiento = async (query = {}, restriccion = {}) => {
 const dbGetRendimientoAtleta = async (atletaId) => {
     if (!mongoose.isValidObjectId(atletaId)) throw errorHttp(400, 'ID de atleta inválido');
 
-    const [habilidades, ultimas, notas] = await Promise.all([
+    const [habilidades, ultimas] = await Promise.all([
         HabilidadesModel.find({ estado: 'Activo' }).populate('tipoHabilidad').lean(),
         RendimientoModel.aggregate(ultimaCalificacion({ usuario: new mongoose.Types.ObjectId(String(atletaId)) })),
     ]);
@@ -73,25 +78,55 @@ const dbGetRendimientoAtleta = async (atletaId) => {
     };
 };
 
-// Lista de atletas con su % de rendimiento (tabla del admin). 
+// Listado de rendimiento: TODOS los atletas activos (equivalente a un LEFT JOIN atletas -> rendimiento).
+// Los atletas sin ninguna evaluación se devuelven con `rendimiento: null` (el frontend los muestra como
+// "Sin rendimiento registrado"). `nivel` puede ser un id o un filtro Mongo ({ $in: [...] }) para el entrenador.
 const dbGetResumenRendimiento = async (nivel) => {
-    const atletas = await dbGetUsuario(nivel);
+    const filtro = { rol: 'Atleta', status: true, estadoSolicitud: 'Aprobada' };
+    if (nivel) filtro.nivel = nivel;
+
+    const atletas = await usuarioModel
+        .find(filtro)
+        .select('nombre apellido codigo nivel')
+        .populate('nivel', 'nombre')
+        .sort({ apellido: 1, nombre: 1 })
+        .lean();
+    if (atletas.length === 0) return [];
+
+    const ids = atletas.map((a) => a._id);
     const activas = await HabilidadesModel.distinct('_id', { estado: 'Activo' });
 
-    const completadas = await RendimientoModel.aggregate([
-        ...ultimaCalificacion({ habilidad: { $in: activas } }),
-        { $match: { calificacion: true } },
-        { $group: { _id: '$_id.usuario', completadas: { $sum: 1 } } },
+    // Edad: se calcula aquí a partir de la fecha de nacimiento del perfil (null si el atleta aún no la registró)
+    const perfiles = await perfilUsuarioModel.find({ perteneceA: { $in: ids } }).select('perteneceA fechaNacimiento').lean();
+    const nacimientoPorUsuario = new Map(perfiles.map((p) => [String(p.perteneceA), p.fechaNacimiento]));
+
+    // Última calificación por atleta y habilidad (solo habilidades activas)
+    const ultimas = await RendimientoModel.aggregate([
+        ...ultimaCalificacion({ usuario: { $in: ids }, habilidad: { $in: activas } }),
+        {
+            $group: {
+                _id: '$_id.usuario',
+                evaluadas: { $sum: 1 },
+                completadas: { $sum: { $cond: ['$calificacion', 1, 0] } },
+                ultimaFecha: { $max: '$fecha' },
+            },
+        },
     ]);
-    const porUsuario = new Map(completadas.map((c) => [String(c._id), c.completadas]));
+    const porUsuario = new Map(ultimas.map((u) => [String(u._id), u]));
 
     return atletas.map((a) => {
-        const hechas = porUsuario.get(String(a._id)) ?? 0;
+        const u = porUsuario.get(String(a._id));
         return {
             ...a,
-            completadas: hechas,
-            total: activas.length,
-            rendimiento: activas.length ? Math.round((hechas / activas.length) * 100) : 0,
+            edad: calcularEdad(nacimientoPorUsuario.get(String(a._id))),
+            rendimiento: u
+                ? {
+                    completadas: u.completadas,
+                    total: activas.length,
+                    porcentaje: activas.length ? Math.round((u.completadas / activas.length) * 100) : 0,
+                    ultimaFecha: u.ultimaFecha,
+                }
+                : null,
         };
     });
 };

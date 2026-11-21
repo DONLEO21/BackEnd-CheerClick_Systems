@@ -9,7 +9,8 @@ router.get('/',[authMiddleware, authorizationMiddleware(['Administrador', 'Entre
 
 router.get('/:id',[authMiddleware, authorizationMiddleware(['Administrador', 'Entrenador', 'Atleta'])], getHabilidad);
 
-router.post('/',[authMiddleware, authorizationMiddleware(['Administrador', 'Entrenador'])], createHabilidad);
+// Crear habilidades: solo el administrador. El entrenador puede habilitar/deshabilitar (ver updateHabilidad)
+router.post('/',[authMiddleware, authorizationMiddleware(['Administrador'])], createHabilidad);
 
 router.patch('/:id',[authMiddleware, authorizationMiddleware(['Administrador', 'Entrenador'])], updateHabilidad);
 

@@ -8,6 +8,12 @@ const MensualidadSchema = new Schema(
             type: Date,
             required: [true, 'La fecha de generacion de la mensualidad es obligatoria']
         },
+        // Mes al que corresponde, formato AAAA-MM. Junto con el usuario es único (evita duplicar la generación automática)
+        periodo: {
+            type: String,
+            match: [/^\d{4}-\d{2}$/, 'El periodo debe tener formato AAAA-MM'],
+            trim: true
+        },
         fechaVencimiento: {
             type: Date,
             required: [true, 'La fecha de vencimiento de la mensualidad es obligatoria']
@@ -45,6 +51,12 @@ const MensualidadSchema = new Schema(
     versionKey:  false //Elimina la propiedad de versionamiento del Schema 
 
 });
+// Una mensualidad por atleta y por mes (solo aplica a documentos con periodo; las antiguas no lo tienen)
+MensualidadSchema.index(
+    { usuario: 1, periodo: 1 },
+    { unique: true, partialFilterExpression: { periodo: { $type: 'string' } } }
+);
+
 //Definir el model a partir de la estructura del documento
 
 const MensualidadModel = model('mensualidades', //Nombre de la coleccion donde se guardaran los documentos de las mensualidades

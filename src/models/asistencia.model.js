@@ -18,11 +18,25 @@ const asistenciaSchema = new Schema(
       ref: "usuario",
       required: [true, "El usuario es obligatorio"],
     },
-    // Sesión de entrenamiento. Requiere el modelo 'horario'
+    // Nivel en el que se toma la asistencia (la planilla se guarda por nivel y día).
+    // CAUSA RAÍZ del "No se pudo guardar la asistencia del día": este campo y `fecha` faltaban en el modelo y el
+    // servicio (upsert por usuario+nivel+fecha) fallaba con StrictModeError.
+    nivel: {
+      type: Schema.Types.ObjectId,
+      ref: "Nivel",
+      required: [true, "El nivel es obligatorio"],
+    },
+    // Día de la asistencia, texto AAAA-MM-DD (hora de Colombia): no sufre desfases de zona horaria
+    fecha: {
+      type: String,
+      match: [/^\d{4}-\d{2}-\d{2}$/, "La fecha debe tener formato AAAA-MM-DD"],
+      required: [true, "La fecha es obligatoria"],
+    },
+    // Sesión de entrenamiento de ese día, si la hay (opcional: puede no haber sesión programada)
     horario: {
       type: Schema.Types.ObjectId,
       ref: "horario",
-      required: [true, "El horario es obligatorio"],
+      default: null,
     },
   },
   {
@@ -31,8 +45,13 @@ const asistenciaSchema = new Schema(
   },
 );
 
-// Un usuario solo tiene una asistencia por horario
-asistenciaSchema.index({ usuario: 1, horario: 1 }, { unique: true });
+// Un atleta tiene una sola asistencia por día. El índice es parcial para no chocar con documentos antiguos sin fecha.
+// (El índice anterior { usuario, horario } se elimina con la migración: scripts/migrar-asistencia.js)
+asistenciaSchema.index(
+  { usuario: 1, fecha: 1 },
+  { unique: true, partialFilterExpression: { fecha: { $type: "string" } } },
+);
+asistenciaSchema.index({ nivel: 1, fecha: 1 });
 
 const AsistenciaModel = model("asistencia", asistenciaSchema);
 

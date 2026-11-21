@@ -3,7 +3,6 @@ import SolicitudImplementosModel from "../models/solicitudImplementos.model.js";
 import ImplementoModel from "../models/implementos.model.js";
 import ImplementoTallaModel from "../models/implementoTalla.model.js";
 import ResenaModel from "../models/resena.model.js";
-import { generarCodigo } from "../helpers/codigo.helpers.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
 
 // Quién puede pasar una solicitud de qué estado a cuál
@@ -91,7 +90,6 @@ const dbCreateSolicitud = async (usuarioId, items = [], datosPago = null) => {
 
         // Pendiente(pagos): crear el pago con datosPago y asignar su _id en `pago`
         const solicitud = await SolicitudModel.create({
-            codigo: await generarCodigo(SolicitudModel, 'SL'),
             usuario: usuarioId,
             // pago: pago._id PENDIENTE
         });
@@ -119,6 +117,10 @@ const dbUpdateSolicitud = async (id, usuario, { condicion, motivoRechazo } = {})
     if (usuario.rol === 'Atleta' && String(solicitud.usuario) !== String(usuario._id))
         throw errorHttp(403, 'Esta solicitud no te pertenece');
 
+    // Un pedido ENTREGADO es definitivo: no puede cambiar de estado (aunque el frontend no lo permita, se valida aquí)
+    if (solicitud.condicion === 'Entregado') {
+        throw errorHttp(409, 'Este pedido ya fue entregado y su estado no se puede modificar');
+    }
     const permitidas = TRANSICIONES[usuario.rol]?.[solicitud.condicion] ?? [];
     if (!permitidas.includes(condicion))
         throw errorHttp(400, `No se puede pasar de ${solicitud.condicion} a ${condicion}`);

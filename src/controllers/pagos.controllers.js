@@ -1,4 +1,6 @@
 import {dbgetPagos, dbInsertPago, dbReadPagos, dbUpdatePago } from "../services/pagos.services.js";
+import { dbAtletaActualizaPago, dbAtletaCreaPago } from "../services/solicitudPago.services.js";
+import { responderError } from "../helpers/errores.helpers.js";
 
 const getFiltroPorRol = (user) => {
     switch (user.rol) {
@@ -26,7 +28,7 @@ const getPagos = async (req, res) => {
         if (buscar) {
             const texto = buscar.toLowerCase();
             data = data.filter(p =>
-                `${p.usuario?.nombre} ${p.usuario?.apellido}`.toLowerCase().includes(texto)
+                `${p.usuario?.nombre} ${p.usuario?.apellido}`.toLowerCase().includes(texto) || (p.codigo ?? '').toLowerCase().includes(texto)
             );
         }
         if (estado) data = data.filter(p => p.estado === estado);
@@ -74,6 +76,12 @@ const createPago = async (req, res) => {
     try {
         const inputData = req.body;
 
+        // El atleta solo crea pagos propios y no confirmados; el comprobante depende del método (Efectivo no lo pide)
+        if (req.userFound.rol === 'Atleta') {
+            const nuevo = await dbAtletaCreaPago(req.userFound, inputData);
+            return res.status(201).json({ success: true, msg: nuevo.estado === 'Pendiente de confirmación' ? 'Solicitud de pago en efectivo registrada' : 'Registrar Pagos', data: nuevo });
+        }
+
         const data = await dbInsertPago(inputData);
 
         return res.status(201).json({ msg: 'Registrar Pagos', data: data });
@@ -98,6 +106,8 @@ const createPago = async (req, res) => {
             });
         }
 
+        if (error.status) return responderError(res, error, 'Error al registrar pago');
+
         return res.status(500).json({ msg: 'Error al registrar pago' });
     }
 };
@@ -108,6 +118,12 @@ const updatePagoPatch = async (req, res) => {
     try {
         const inputData = req.body;
 
+        // Atleta: solo su propio pago, con campos limitados y sin poder marcarlo como Pagado (ver solicitudPago.services)
+        if (req.userFound.rol === 'Atleta') {
+            const propio = await dbAtletaActualizaPago(id, req.userFound, inputData);
+            return res.status(200).json({ success: true, msg: propio.estado === 'Pendiente de confirmación' ? 'Pago en efectivo solicitado: queda pendiente de confirmación' : 'Pago enviado', data: propio });
+        }
+
         const data = await dbUpdatePago(id, inputData);
 
         if (!data) {
@@ -117,6 +133,9 @@ const updatePagoPatch = async (req, res) => {
         return res.status(200).json({ msg: 'Actualizar los campos del pago', data: data });
     } catch (error) {
         console.error(error);
+
+        // Errores de las reglas del atleta (400/403/404/409 con mensaje claro)
+        if (error.status) return responderError(res, error, 'Error al actualizar los campos de pago');
 
         if (error.name == 'ValidationError') {
             const errors = {};
