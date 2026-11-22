@@ -20,7 +20,7 @@ const solicitudeSchema = new Schema(
     },
     pago: {
       type: Schema.Types.ObjectId,
-      ref: "pagos",
+      ref: "Pagos",
       required: [true, "El pago es obligatorio"],
       unique: true,
       sparce: true

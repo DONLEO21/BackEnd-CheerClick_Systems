@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const HorarioSchema = new Schema({
     fecha: {
@@ -66,6 +67,9 @@ const HorarioSchema = new Schema({
     timestamps: true,
     versionKey: false
 });
+
+// Código visible consecutivo HR001, HR002… (el _id interno se conserva para las relaciones)
+HorarioSchema.plugin(pluginCodigo, 'HR');
 
 const HorarioModel = model('Horario', HorarioSchema);
 

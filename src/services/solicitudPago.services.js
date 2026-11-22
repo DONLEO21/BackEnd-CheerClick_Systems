@@ -77,3 +77,47 @@ export const dbAtletaCreaPago = async (usuario, entrada) => {
     if (efectivo) await avisarEfectivo(nuevo, usuario);
     return nuevo;
 };
+
+/**
+ * Pago de un PEDIDO de implementos (solicitud). Mismas reglas que el resto de pagos (una sola fuente de verdad):
+ *  - Método obligatorio y existente.
+ *  - Comprobante obligatorio solo si el método lo requiere (Efectivo no).
+ *  - Efectivo: queda "Pendiente de confirmación"; los digitales, "Pendiente" hasta que el administrador revise.
+ * NO notifica: se avisa con `avisarPedidoEfectivo` cuando la solicitud ya quedó guardada.
+ */
+export const dbCrearPagoPedido = async (usuario, { metodoPago, comprobante } = {}, valorTotal) => {
+    const metodo = await buscarMetodo(metodoPago);
+    const efectivo = esMetodoEfectivo(metodo.nombre);
+    const archivo = String(comprobante ?? '').trim();
+    if (requiereComprobante(metodo) && !archivo)
+        throw errorHttp(400, `El comprobante es obligatorio para pagar con ${metodo.nombre}`);
+
+    const pago = await PagosModel.create({
+        valorTotal,
+        fechaGenera: new Date(),
+        estado: efectivo ? ESTADO_PENDIENTE_CONFIRMACION : 'Pendiente',
+        metodoPago: metodo._id,
+        comprobante: requiereComprobante(metodo) ? archivo : '',
+        usuario: usuario._id ?? usuario,
+    });
+    return { pago, efectivo };
+};
+
+/** Avisa a los administradores (campanita) de que hay un pedido en efectivo por confirmar. */
+export const avisarPedidoEfectivo = async (usuario, solicitud, valorTotal) => {
+    const nombre = `${usuario.nombre ?? ''} ${usuario.apellido ?? ''}`.trim() || 'Un atleta';
+    const valor = Number(valorTotal).toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 });
+    await notificarAdministradores(
+        'pago',
+        `${nombre} hizo el pedido ${solicitud.codigo ?? ''} para pagar en efectivo (${valor}). Confírmalo al entregarlo.`.replace('  ', ' '),
+        { titulo: 'Pedido en efectivo por confirmar', enlace: '/admin/implementos' }
+    );
+};
+
+/** Al ENTREGAR un pedido, un pago en efectivo pendiente se da por recibido (se confirma el dinero). */
+export const dbConfirmarPagoEfectivoPedido = async (pagoId) => {
+    await PagosModel.updateOne(
+        { _id: pagoId, estado: ESTADO_PENDIENTE_CONFIRMACION },
+        { estado: 'Pagado', fechaPago: new Date() }
+    );
+};

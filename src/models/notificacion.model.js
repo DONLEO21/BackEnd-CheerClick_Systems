@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const notificacionSchema = new Schema({
     usuario:{ 
@@ -36,6 +37,9 @@ const notificacionSchema = new Schema({
 { 
     timestamps: true 
 });
+
+// Código visible consecutivo NT001, NT002… (el _id interno se conserva para las relaciones)
+notificacionSchema.plugin(pluginCodigo, 'NT');
 
 const notificacionModel = model( 'notificacion', notificacionSchema );
 

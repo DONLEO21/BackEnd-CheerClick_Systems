@@ -4,6 +4,8 @@ import ImplementoModel from "../models/implementos.model.js";
 import ImplementoTallaModel from "../models/implementoTalla.model.js";
 import ResenaModel from "../models/resena.model.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
+import PagosModel from "../models/pagos.model.js";
+import { dbCrearPagoPedido, avisarPedidoEfectivo, dbConfirmarPagoEfectivoPedido } from "./solicitudPago.services.js";
 
 // Quién puede pasar una solicitud de qué estado a cuál
 const TRANSICIONES = {
@@ -43,6 +45,7 @@ const devolverStock = async (lineas) => {
 const dbGetSolicitud = async (filtro = {}) => {
     const solicitudes = await SolicitudModel.find(filtro)
         .populate('usuario', 'nombre apellido')   // TODO(nivel del atleta): agregar el campo aquí cuando se realice el merge
+        .populate({ path: 'pago', select: 'codigo estado valorTotal comprobante fechaPago metodoPago', populate: { path: 'metodoPago', select: 'nombre requiereComprobante' } })
         .sort({ fecha: -1 })
         .lean();
 
@@ -64,8 +67,9 @@ const dbGetSolicitud = async (filtro = {}) => {
     });
 };
 
-// datosPago: lo conecta el compañero de pagos
-const dbCreateSolicitud = async (usuarioId, items = [], datosPago = null) => {
+// datosPago: { metodoPago (id), comprobante? }. El pago se crea aquí con la misma regla compartida del resto de pagos.
+const dbCreateSolicitud = async (usuario, items = [], datosPago = {}) => {
+    const usuarioId = usuario._id;
     if (!Array.isArray(items) || items.length === 0)
         throw errorHttp(400, 'La solicitud debe tener al menos un implemento');
 
@@ -88,11 +92,17 @@ const dbCreateSolicitud = async (usuarioId, items = [], datosPago = null) => {
             l.precioUnitario = implemento.precio;   
         }
 
-        // Pendiente(pagos): crear el pago con datosPago y asignar su _id en `pago`
-        const solicitud = await SolicitudModel.create({
-            usuario: usuarioId,
-            // pago: pago._id PENDIENTE
-        });
+        // Pago del pedido (efectivo: sin comprobante, "Pendiente de confirmación"; digital: comprobante obligatorio)
+        const total = lineas.reduce((suma, l) => suma + l.cantidad * l.precioUnitario, 0);
+        const { pago, efectivo } = await dbCrearPagoPedido(usuario, datosPago, total);
+
+        let solicitud;
+        try {
+            solicitud = await SolicitudModel.create({ usuario: usuarioId, pago: pago._id });
+        } catch (error) {
+            await PagosModel.deleteOne({ _id: pago._id });
+            throw error;
+        }
 
         try {
             await SolicitudImplementosModel.insertMany(
@@ -100,9 +110,11 @@ const dbCreateSolicitud = async (usuarioId, items = [], datosPago = null) => {
             );
         } catch (error) {
             await SolicitudModel.deleteOne({ _id: solicitud._id });
+            await PagosModel.deleteOne({ _id: pago._id });
             throw error;
         }
 
+        if (efectivo) await avisarPedidoEfectivo(usuario, solicitud, total).catch((e) => console.error('[pedido] no se pudo avisar al administrador', e));
         return (await dbGetSolicitud({ _id: solicitud._id }))[0];
     } catch (error) {
         await devolverStock(reservadas);   // si algo falló, libera lo reservado
@@ -134,6 +146,8 @@ const dbUpdateSolicitud = async (id, usuario, { condicion, motivoRechazo } = {})
         { new: true, runValidators: true }
     );
     if (!actualizada) throw errorHttp(409, 'La solicitud cambió de estado, recarga e intenta de nuevo');
+
+    if (condicion === 'Entregado') await dbConfirmarPagoEfectivoPedido(solicitud.pago);
 
     if (condicion === 'Cancelado' || condicion === 'Rechazado') {
         await devolverStock(await SolicitudImplementosModel.find({ solicitud: id }));

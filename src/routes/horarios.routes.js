@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createHorario, deleteHorario, getHorario, getHorarios, updateHorario } from '../controllers/horarios.controllers.js';
+import { createHorario, deleteHorario, getHorario, getHorarios, getSesiones, updateHorario } from '../controllers/horarios.controllers.js';
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
 import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
@@ -10,6 +10,8 @@ router.get('/', [authMiddleware, authorizationMiddleware(['Administrador', 'Atle
 router.post('/',[authMiddleware, authorizationMiddleware(['Administrador','Entrenador'])], createHorario);
 router.patch('/:id', [authMiddleware, authorizationMiddleware(['Administrador','Entrenador'])], updateHorario);
 router.delete('/:id', [authMiddleware, authorizationMiddleware(['Administrador','Entrenador'])], deleteHorario);
+// Antes de '/:id' para que "sesiones" no se tome como un id
+router.get('/sesiones', [authMiddleware, authorizationMiddleware(['Administrador', 'Entrenador'])], getSesiones);
 router.get('/:id', [authMiddleware, authorizationMiddleware(['Administrador', 'Atleta', 'Entrenador'])], getHorarios )
 
 export default router;

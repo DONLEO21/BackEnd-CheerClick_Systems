@@ -44,7 +44,7 @@ import inscripciones_competenciasRoute from './routes/inscripciones_competencias
 
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
 import { iniciarJobMensualidades } from './jobs/mensualidades.job.js';
-import { migrarIndicesAsistencia } from './helpers/migraciones.helpers.js'; // Generación automática de mensualidades
+import { migrarIndicesAsistencia, asegurarMetodosPago } from './helpers/migraciones.helpers.js'; // Generación automática de mensualidades
 
 //Iniciar servidor 
 const port= process.env.PORT || 3001;
@@ -55,6 +55,7 @@ const app = express();     //Instancia de express
 conexion().then(async () => {
     // Índices de asistencia (elimina el único antiguo { usuario, horario } que impedía guardar más de un día)
     await migrarIndicesAsistencia().catch((error) => console.error('[migración] no se pudieron actualizar los índices de asistencia', error));
+    await asegurarMetodosPago().catch((error) => console.error('[migración] no se pudieron preparar los métodos de pago', error));
     iniciarJobMensualidades();
 });
 

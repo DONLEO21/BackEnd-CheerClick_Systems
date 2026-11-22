@@ -1,23 +1,14 @@
-// Asigna códigos consecutivos (IM001, PG001, HA001 y SL001 para los pedidos) a los registros que todavía no los tienen.
-//   node --env-file .env scripts/migrar-codigos.js
+// Asigna códigos consecutivos (IM, PG, HA, SL, NV, PL, MP, HR, JU, RS, RD, NT, CP, IC + número de 3 dígitos) a los
+// registros que todavía no los tienen. Usuarios (AT/EN/AD) y PQRS (PQ0001) ya tenían el suyo y no se tocan.
+//   node --env-file .env scripts/migrar-codigos.js    (o: npm run migrar:codigos)
 //
 // Idempotente: solo toca documentos SIN código, en orden de creación, continuando desde el contador. Ejecutarlo de
 // nuevo no cambia nada. Los códigos ya asignados no se modifican nunca. Al terminar deja cada contador en el valor
 // correcto (el mayor número existente), de modo que los registros nuevos continúan la secuencia.
 import mongoose from "mongoose";
-import ImplementoModel from "../src/models/implementos.model.js";
-import PagosModel from "../src/models/pagos.model.js";
-import HabilidadesModel from "../src/models/habilidades.model.js";
-import SolicitudModel from "../src/models/solicitud.model.js";
+import { ENTIDADES_CON_CODIGO as ENTIDADES } from "../src/helpers/entidadesConCodigo.js";
 import contadorModel from "../src/models/contador.model.js";
 import { formatearCodigo, asegurarContador } from "../src/helpers/consecutivo.helpers.js";
-
-const ENTIDADES = [
-  { nombre: "implementos", prefijo: "IM", modelo: ImplementoModel },
-  { nombre: "pagos", prefijo: "PG", modelo: PagosModel },
-  { nombre: "habilidades", prefijo: "HA", modelo: HabilidadesModel },
-  { nombre: "pedidos (solicitudes)", prefijo: "SL", modelo: SolicitudModel },
-];
 
 await mongoose.connect(process.env.URI_MONGO || "mongodb://localhost:27017/db-CheerClick");
 

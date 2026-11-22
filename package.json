@@ -20,7 +20,13 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "node --env-file .env --watch src/index.js"
+    "dev": "node --env-file .env --watch src/index.js",
+    "migrar:asistencia": "node --env-file .env scripts/migrar-asistencia.js",
+    "migrar:codigos": "node --env-file .env scripts/migrar-codigos.js",
+    "verificar:codigos": "node --env-file .env scripts/verificar-codigos.js",
+    "auditar:niveles": "node --env-file .env scripts/auditar-niveles.js",
+    "auditar:fechas": "node --env-file .env scripts/auditar-fechas-nacimiento.js",
+    "auditar:imagenes": "node --env-file .env scripts/auditar-imagenes.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

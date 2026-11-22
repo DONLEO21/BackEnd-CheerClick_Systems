@@ -1,4 +1,5 @@
 import AsistenciaModel from "../models/asistencia.model.js";
+import metodoPagoModel from "../models/metodoPago.model.js";
 
 /**
  * Índices de la colección "asistencias" (idempotente; no borra ni modifica documentos).
@@ -17,4 +18,20 @@ export const migrarIndicesAsistencia = async () => {
     await AsistenciaModel.createIndexes();
 
     return { eliminado: viejo?.name ?? null, indices: (await coleccion.indexes()).map((i) => i.name) };
+};
+
+/**
+ * Métodos de pago (idempotente): garantiza que exista "Efectivo" (sin comprobante ni QR) y que todos los métodos
+ * tengan `requiereComprobante` (digitales = true). El pedido y la mensualidad en efectivo dependen de este registro.
+ */
+export const asegurarMetodosPago = async () => {
+    const reEfectivo = /^\s*efectivo\s*$/i;
+    let creado = false;
+    if (!(await metodoPagoModel.findOne({ nombre: reEfectivo }).lean())) {
+        await metodoPagoModel.create({ nombre: 'Efectivo', requiereComprobante: false });
+        creado = true;
+    }
+    await metodoPagoModel.updateMany({ nombre: reEfectivo }, { requiereComprobante: false, qr: '' });
+    await metodoPagoModel.updateMany({ nombre: { $not: reEfectivo }, requiereComprobante: { $exists: false } }, { requiereComprobante: true });
+    return { efectivoCreado: creado };
 };

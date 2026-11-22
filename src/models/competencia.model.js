@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const CompetenciaSchema = new Schema ({
     nombre: {
@@ -58,6 +59,9 @@ const CompetenciaSchema = new Schema ({
     timestamps: true,                
     versionKey: false 
 });
+
+// Código visible consecutivo CP001, CP002… (el _id interno se conserva para las relaciones)
+CompetenciaSchema.plugin(pluginCodigo, 'CP');
 
 const CompetenciaModel=model(
     'Competencia',

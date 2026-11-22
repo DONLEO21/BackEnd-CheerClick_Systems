@@ -8,6 +8,10 @@ import perfilUsuarioModel from "../models/perfilUsuario.model.js";
 import { validarAccesoAtleta, validarAccesoNivel } from "../helpers/acceso.helpers.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
 import { calcularEdad, esFechaISO, fechaADate, hoyISO } from "../helpers/fecha.helpers.js";
+import { esDiaDeSesion } from "../helpers/sesiones.helpers.js";
+import { reservarCodigos } from "../helpers/consecutivo.helpers.js";
+
+const MAX_NOTA = 250;
 
 // Estado actual = la última evaluación de cada habilidad por atleta
 // Si la evaluación no trae `usuario` (documentos antiguos) se toma de su asistencia.
@@ -139,8 +143,20 @@ const dbGuardarRendimientoAtleta = async (usuarioSesion, atletaId, { fecha, habi
     const lista = Array.isArray(habilidades) ? habilidades : [];
     const texto = nota?.trim() ?? '';
     if (lista.length === 0 && !texto) throw errorHttp(400, 'No hay cambios para guardar');
+    if (texto.length > MAX_NOTA) throw errorHttp(400, `La nota no puede superar los ${MAX_NOTA} caracteres`);
 
     await validarAccesoAtleta(usuarioSesion, atletaId);
+
+    // La fecha debe ser un día de sesión del nivel del atleta y no futura. Un rendimiento antiguo (ya existe uno
+    // en esa fecha) se puede seguir editando aunque su fecha ya no cumpla la regla.
+    if (fecha > hoyISO()) throw errorHttp(400, 'No se puede registrar rendimiento de una fecha futura');
+    const atleta = await usuarioModel.findById(atletaId).select('nivel').lean();
+    if (atleta?.nivel) {
+        const yaExiste = await RendimientoModel.exists({ usuario: atletaId, fecha: fechaADate(fecha) });
+        if (!yaExiste && !(await esDiaDeSesion(atleta.nivel, fecha))) {
+            throw errorHttp(400, `El ${fecha} no es un día de sesión del nivel de este atleta. Elige uno de los días de entrenamiento.`);
+        }
+    }
 
     if (lista.length > 0) {
         // La evaluación se relaciona con la asistencia de ese día
@@ -162,6 +178,14 @@ const dbGuardarRendimientoAtleta = async (usuarioSesion, atletaId, { fecha, habi
             throw errorHttp(400, 'Hay habilidades que no existen o están inactivas');
         }
 
+        // bulkWrite + upsert NO ejecuta los hooks de save: el código (RD001…) de los registros NUEVOS se reserva aquí
+        // (una sola reserva atómica) y se escribe con $setOnInsert; los que ya existen conservan el suyo.
+        const existentes = new Set((await RendimientoModel.find({ asistencia: asistencia._id, habilidad: { $in: ids } }).select('habilidad').lean())
+            .map((r) => String(r.habilidad)));
+        const nuevos = lista.filter((h) => !existentes.has(String(h.habilidad)));
+        const codigos = new Map(nuevos.map((h, i) => [String(h.habilidad), null]));
+        (await reservarCodigos('RD', nuevos.length)).forEach((c, i) => codigos.set(String(nuevos[i].habilidad), c));
+
         await RendimientoModel.bulkWrite(lista.map((h) => ({
             updateOne: {
                 filter: { asistencia: asistencia._id, habilidad: h.habilidad },
@@ -172,6 +196,7 @@ const dbGuardarRendimientoAtleta = async (usuarioSesion, atletaId, { fecha, habi
                         observaciones: h.observaciones?.trim() || null,
                         fecha: fechaADate(fecha),
                     },
+                    ...(codigos.get(String(h.habilidad)) ? { $setOnInsert: { codigo: codigos.get(String(h.habilidad)) } } : {}),
                 },
                 upsert: true,
             },

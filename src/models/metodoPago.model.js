@@ -1,4 +1,5 @@
 import {Schema, model} from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const metodoPagoSchema = new Schema({
     nombre : {
@@ -35,6 +36,9 @@ const esEfectivo = (nombre) => String(nombre ?? '').normalize('NFD').replace(/[�
 metodoPagoSchema.pre('validate', function () {
     if (esEfectivo(this.nombre)) { this.qr = ''; this.requiereComprobante = false; }
 });
+
+// Código visible consecutivo MP001, MP002… (el _id interno se conserva para las relaciones)
+metodoPagoSchema.plugin(pluginCodigo, 'MP');
 
 const metodoPagoModel = model('metodoPago', metodoPagoSchema);
 

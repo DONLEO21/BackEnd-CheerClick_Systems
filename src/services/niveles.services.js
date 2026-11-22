@@ -1,4 +1,5 @@
 import NivelModel from "../models/nivel.model.js";
+import PlantillaHorarioModel from "../models/plantilla_horario.model.js";
 
 // El authMiddleware guarda el usuario en req.userFound.
 const getUserId = (user) => user?._id || user?.id;
@@ -27,9 +28,27 @@ const dbGetNivel = async (query = {}, user) => {
     return await NivelModel.find(filter).populate('usuario', 'nombre apellido');
 }
 
-// Público (registro): solo los niveles ACTIVOS y solo los datos que el formulario necesita
+// Público (registro y página de inicio): solo los niveles ACTIVOS y solo los datos que se muestran sin sesión:
+// nombre, nombre del entrenador y horario semanal. No se expone ningún otro dato del entrenador (ni su id).
 const dbGetNivelesPublico = async () => {
-    return await NivelModel.find({ estado: 'Activo' }).select('nombre').sort({ nombre: 1 });
+    const niveles = await NivelModel.find({ estado: 'Activo' })
+        .select('nombre usuario')
+        .populate('usuario', 'nombre apellido')
+        .sort({ nombre: 1 })
+        .lean();
+    const plantillas = await PlantillaHorarioModel.find({ nivel: { $in: niveles.map((n) => n._id) } })
+        .select('nivel dia horaInicio horaFin')
+        .sort({ horaInicio: 1 })
+        .lean();
+
+    return niveles.map((n) => ({
+        _id: n._id,
+        nombre: n.nombre,
+        entrenador: n.usuario ? [n.usuario.nombre, n.usuario.apellido].filter(Boolean).join(' ') : '',
+        horarios: plantillas
+            .filter((p) => String(p.nivel) === String(n._id))
+            .map((p) => ({ dia: p.dia, horaInicio: p.horaInicio, horaFin: p.horaFin })),
+    }));
 }
 
 const dbUpdateNivel = async (id, nivelUpdate) => {

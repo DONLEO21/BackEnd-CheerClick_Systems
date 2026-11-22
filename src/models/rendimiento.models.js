@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const rendimientoSchema = new Schema(
   {
@@ -43,6 +44,9 @@ const rendimientoSchema = new Schema(
 );
 
 rendimientoSchema.index({ asistencia: 1, habilidad: 1 }, { unique: true });
+
+// Código visible consecutivo RD001, RD002… (el _id interno se conserva para las relaciones)
+rendimientoSchema.plugin(pluginCodigo, 'RD');
 
 const RendimientoModel = model("rendimiento", rendimientoSchema);
 

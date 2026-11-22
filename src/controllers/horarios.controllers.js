@@ -1,3 +1,8 @@
+import mongoose from "mongoose";
+import { responderError, errorHttp } from "../helpers/errores.helpers.js";
+import { validarAccesoNivel } from "../helpers/acceso.helpers.js";
+import { esFechaISO, hoyISO } from "../helpers/fecha.helpers.js";
+import { listarSesionesNivel } from "../helpers/sesiones.helpers.js";
 import { dbCreateHorario, dbdeleteHorario, dbgetdHorario, dbGetHorarios, dbupdateHorario } from "../services/horarios.services.js";
 
 // Respuestas repetidas, para no copiar el mismo código en cada función
@@ -124,3 +129,27 @@ export {
     deleteHorario,
     getHorarios
 }
+
+// GET /api/horarios/sesiones?nivelId=&hasta=AAAA-MM-DD|hoy&limite=12
+// Días de sesión del nivel (según su plantilla semanal), del más reciente al más antiguo y nunca futuros.
+// El entrenador solo consulta sus niveles. Sirve para elegir la fecha al registrar el rendimiento.
+const getSesiones = async (req, res) => {
+    try {
+        const { nivelId, hasta, limite } = req.query;
+        if (!nivelId || !mongoose.isValidObjectId(nivelId)) throw errorHttp(400, 'Se requiere un nivelId válido');
+        await validarAccesoNivel(req.userFound, nivelId);
+
+        const hoy = hoyISO();
+        let tope = !hasta || hasta === 'hoy' ? hoy : hasta;
+        if (!esFechaISO(tope)) throw errorHttp(400, 'El parámetro hasta debe ser "hoy" o AAAA-MM-DD');
+        if (tope > hoy) tope = hoy;   // nunca sesiones futuras
+
+        const cantidad = Math.min(Math.max(parseInt(limite, 10) || 12, 1), 60);
+        const data = await listarSesionesNivel(nivelId, { hasta: tope, limite: cantidad });
+        res.status(200).json({ success: true, msg: 'Sesiones del nivel', hoy, ...data });
+    } catch (error) {
+        responderError(res, error, 'No se han podido listar las sesiones');
+    }
+};
+
+export { getSesiones };

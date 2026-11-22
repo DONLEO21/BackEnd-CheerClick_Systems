@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const justificacionSchema = new Schema(
   {
@@ -66,6 +67,9 @@ const justificacionSchema = new Schema(
     versionKey: false,
   },
 );
+
+// Código visible consecutivo JU001, JU002… (el _id interno se conserva para las relaciones)
+justificacionSchema.plugin(pluginCodigo, 'JU');
 
 const JustificacionModel = model("justificacion", justificacionSchema);
 

@@ -1,4 +1,5 @@
 import { Schema, model } from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const resenaSchema = new Schema(
   {
@@ -26,6 +27,9 @@ const resenaSchema = new Schema(
     versionKey: false,
   },
 );
+
+// Código visible consecutivo RS001, RS002… (el _id interno se conserva para las relaciones)
+resenaSchema.plugin(pluginCodigo, 'RS');
 
 const ResenaModel = model("resena", resenaSchema);
 
