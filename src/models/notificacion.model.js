@@ -10,7 +10,7 @@ const notificacionSchema = new Schema({
     
     },
     tipo:{ 
-        type: String, enum: ['seguridad', 'perfil', 'cuenta', 'pago'], 
+        type: String, enum: ['seguridad', 'perfil', 'cuenta', 'pago', 'justificacion'], 
         required: true 
     },
     titulo:{

@@ -17,7 +17,7 @@ const rendimientoSchema = new Schema(
     },
     habilidad: {
       type: Schema.Types.ObjectId,
-      ref: "habilidad",
+      ref: "Habilidad",
       required: [true, "La habilidad es obligatoria"],
     },
     calificacion: {

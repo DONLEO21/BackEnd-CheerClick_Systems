@@ -8,7 +8,7 @@ const PagosSchema = new Schema(
     {
     estado : {
         type: String,
-        enum: ['Pagado', 'Vencido', 'Pendiente', 'Pendiente de confirmación'],   // 'Pendiente de confirmación': pago en efectivo ya solicitado    //Tipo de dato
+        enum: ['Pagado', 'Vencido', 'Pendiente', 'Pendiente de confirmación', 'Rechazado'],   // 'Pendiente de confirmación': pago en efectivo ya solicitado    //Tipo de dato
         default : 'Pendiente',
         required : [true, 'El estado del pago es obligatorio'],    //Regla: Es OBLIGATORIO
         trim: true   //Modificador : 

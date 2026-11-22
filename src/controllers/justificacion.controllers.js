@@ -1,5 +1,5 @@
 import {
-    dbCreateJustificacion, dbDeleteJustificacion, dbGetJustificacion, dbUpdateJustificacion
+    dbCreateJustificacion, dbDeleteJustificacion, dbGetJustificacion, dbUpdateJustificacion, dbGetArchivoJustificacion
 } from "../services/justificacion.services.js";
 import { responderError } from "../helpers/errores.helpers.js";
 import { filtroAsistenciaPorRol } from "../helpers/acceso.helpers.js";
@@ -47,7 +47,19 @@ const deleteJustificacion = async (req, res) => {
     }
 };
 
+// GET /api/justificacion/:id/archivo  (autenticado): entrega el soporte adjunto (se abre en el navegador)
+const getArchivoJustificacion = async (req, res) => {
+    try {
+        const { rutaFisica, nombre } = await dbGetArchivoJustificacion(req.userFound, req.params.id);
+        res.setHeader('Content-Disposition', `inline; filename="${encodeURIComponent(nombre)}"`);
+        res.sendFile(rutaFisica);
+    } catch (error) {
+        responderError(res, error, 'No se pudo obtener el archivo');
+    }
+};
+
 export {
+    getArchivoJustificacion,
     createJustificacion,
     getJustificacion,
     updateJustificacion,

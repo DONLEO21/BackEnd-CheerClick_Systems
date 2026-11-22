@@ -1,6 +1,7 @@
 import {dbgetPagos, dbInsertPago, dbReadPagos, dbUpdatePago } from "../services/pagos.services.js";
 import { dbAtletaActualizaPago, dbAtletaCreaPago } from "../services/solicitudPago.services.js";
 import { responderError } from "../helpers/errores.helpers.js";
+import { notificar } from "../services/notificaciones.services.js";
 
 const getFiltroPorRol = (user) => {
     switch (user.rol) {
@@ -128,6 +129,14 @@ const updatePagoPatch = async (req, res) => {
 
         if (!data) {
             return res.status(404).json({ msg: 'No se encontró el pago a actualizar' });
+        }
+
+        // Confirmar o rechazar un pago avisa al atleta (campanita)
+        if (['Pagado', 'Rechazado'].includes(inputData.estado) && data.usuario) {
+            const confirmado = inputData.estado === 'Pagado';
+            await notificar(data.usuario, 'pago',
+                `Tu pago ${data.codigo ?? ''} fue ${confirmado ? 'confirmado' : 'rechazado'}${!confirmado && data.observaciones ? `: ${data.observaciones}` : '.'}`.replace('  ', ' '),
+                { titulo: confirmado ? 'Pago confirmado' : 'Pago rechazado', enlace: '/atleta/pagos' });
         }
 
         return res.status(200).json({ msg: 'Actualizar los campos del pago', data: data });

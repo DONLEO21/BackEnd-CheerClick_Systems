@@ -45,6 +45,7 @@ import inscripciones_competenciasRoute from './routes/inscripciones_competencias
 import conexion from './config/mongo.config.js' //Conexion a la base de datos
 import { iniciarJobMensualidades } from './jobs/mensualidades.job.js';
 import { migrarIndicesAsistencia, asegurarMetodosPago } from './helpers/migraciones.helpers.js'; // Generación automática de mensualidades
+import { asegurarCarpetasDeArchivos } from './helpers/archivo.helpers.js';
 
 //Iniciar servidor 
 const port= process.env.PORT || 3001;
@@ -53,6 +54,8 @@ const app = express();     //Instancia de express
 
 // Conecta a la base de datos y, ya conectado, programa la generación mensual de mensualidades
 conexion().then(async () => {
+    // La carpeta de soportes debe existir y poder escribirse antes de recibir la primera justificación
+    await asegurarCarpetasDeArchivos().catch((error) => console.error('[archivos] no se pudieron crear las carpetas de uploads', error));
     // Índices de asistencia (elimina el único antiguo { usuario, horario } que impedía guardar más de un día)
     await migrarIndicesAsistencia().catch((error) => console.error('[migración] no se pudieron actualizar los índices de asistencia', error));
     await asegurarMetodosPago().catch((error) => console.error('[migración] no se pudieron preparar los métodos de pago', error));
@@ -68,7 +71,8 @@ if (origenesPermitidos.length > 0) {
 
 //Habilita a la aplicacion para intepretar JSON
 // (límite ampliado: los comprobantes de pago viajan como imagen/PDF en base64 dentro del JSON)
-app.use(express.json({ limit: '5mb' }));
+// 8 MB: un archivo de 5 MB en base64 pesa ~6,7 MB (soportes de justificaciones y comprobantes de pago)
+app.use(express.json({ limit: '8mb' }));
 
 // Solo las fotos son públicas. Los certificados no se envian aqui
 app.use('/uploads/fotos', express.static(path.resolve('uploads/fotos')));
@@ -115,6 +119,19 @@ app.use('/api/plantilla_horario', plantilla_horariosRoute);
 app.use('/api/niveles', nivelesRoute );
 app.use('/api/competencias', competenciasRoute);
 app.use('/api/inscripciones_competencias', inscripciones_competenciasRoute);
+
+// Errores del propio express / body-parser (JSON inválido, cuerpo demasiado grande): siempre JSON con mensaje claro
+app.use((err, req, res, next) => {
+    if (res.headersSent) return next(err);
+    if (err?.type === 'entity.too.large' || err?.status === 413) {
+        return res.status(413).json({ success: false, msg: 'El archivo o los datos enviados son demasiado grandes (máximo 5 MB por archivo)' });
+    }
+    if (err?.type === 'entity.parse.failed') {
+        return res.status(400).json({ success: false, msg: 'El cuerpo de la petición no es un JSON válido' });
+    }
+    console.error(err);
+    return res.status(err?.status || 500).json({ success: false, msg: err?.message || 'Error interno del servidor' });
+});
 
 app.listen(port, () => {
     console.log(`Servidor corriendo en http://localhost:${port}`);

@@ -35,7 +35,7 @@ const asistenciaSchema = new Schema(
     // Sesión de entrenamiento de ese día, si la hay (opcional: puede no haber sesión programada)
     horario: {
       type: Schema.Types.ObjectId,
-      ref: "horario",
+      ref: "Horario",
       default: null,
     },
   },

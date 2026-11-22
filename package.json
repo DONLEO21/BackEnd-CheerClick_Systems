@@ -26,7 +26,8 @@
     "verificar:codigos": "node --env-file .env scripts/verificar-codigos.js",
     "auditar:niveles": "node --env-file .env scripts/auditar-niveles.js",
     "auditar:fechas": "node --env-file .env scripts/auditar-fechas-nacimiento.js",
-    "auditar:imagenes": "node --env-file .env scripts/auditar-imagenes.js"
+    "auditar:imagenes": "node --env-file .env scripts/auditar-imagenes.js",
+    "auditar:competencias": "node --env-file .env scripts/auditar-competencias.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

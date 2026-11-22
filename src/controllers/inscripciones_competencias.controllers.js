@@ -1,13 +1,20 @@
 import { dbCreateInscripcion_competencia, dbDeleteInscripcion_competencia, dbGetInscripcion_competencia, dbGetInscripciones_competencias, dbUpdateInscripcion_competencia, dbFindInscripcionDuplicada } from "../services/inscripciones_competencias.services.js";
 import { dbGetCompetencias } from "../services/competencias.services.js";
+import { dbCrearPagoPedido } from "../services/solicitudPago.services.js";
+import { notificarAdministradores } from "../services/notificaciones.services.js";
+import PagosModel from "../models/pagos.model.js";
 
 // El Atleta se inscribe a una competencia de su nivel
+// Body: { competencia, metodoPago, comprobante?, fechaPago?, observaciones? }. El VALOR sale de la competencia (no del cliente)
+// y el comprobante solo es obligatorio si el método de pago lo requiere (Efectivo no). El pago y la inscripción se crean
+// juntos: si la inscripción falla, el pago se elimina.
 const createInscripcion_competencia = async (req, res) => {
+    let pagoCreado = null;
     try {
-        const inputData = req.body;
+        const { competencia: competenciaId, metodoPago, comprobante, fechaPago, observaciones } = req.body;
 
         // El usuario sale del token, nunca del body (evita inscribir a otra persona)
-        inputData.usuario = req.userFound._id;
+        const inputData = { competencia: competenciaId, usuario: req.userFound._id };
 
         // Valida que venga la competencia
         if (!inputData.competencia) {
@@ -37,12 +44,27 @@ const createInscripcion_competencia = async (req, res) => {
             return res.status(409).json({ msg: 'Ya estas inscrito en esta competencia' });
         }
 
+        // Pago (valor oficial de la competencia). Falla con 400 y mensaje claro si falta el método o el comprobante requerido
+        const valor = Number(competencia.precioinscripcion ?? 0);
+        const { pago, efectivo } = await dbCrearPagoPedido(req.userFound, { metodoPago, comprobante, fechaPago, observaciones }, valor);
+        pagoCreado = pago;
+
+        inputData.pago = pago._id;
         const data = await dbCreateInscripcion_competencia(inputData);
 
-        res.status(201).json({ msg: 'Registrar una Inscripcion a Competencia', data: data });
+        const quien = `${req.userFound.nombre ?? ''} ${req.userFound.apellido ?? ''}`.trim() || 'Un atleta';
+        await notificarAdministradores('pago',
+            `${quien} ${efectivo ? 'solicitó pagar en efectivo' : 'envió el comprobante de pago'} de la inscripción a ${competencia.nombre} (${valor.toLocaleString('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 })}).`,
+            { titulo: 'Pago de inscripción por verificar', enlace: '/admin/pagos' });
+
+        res.status(201).json({ success: true, msg: 'Registrar una Inscripcion a Competencia', data: data });
 
     } catch (error) {
         console.error(error);
+        if (pagoCreado) await PagosModel.deleteOne({ _id: pagoCreado._id }).catch(() => {});
+
+        // Errores con mensaje claro (400 método/comprobante, 404…)
+        if (error.status) return res.status(error.status).json({ success: false, msg: error.message });
 
         if (error.code == 11000) {
             const field = Object.keys(error.keyValue)[0];

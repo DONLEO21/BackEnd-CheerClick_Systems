@@ -58,6 +58,8 @@ export const dbAtletaActualizaPago = async (id, usuario, entrada) => {
     if (pago.estado === 'Pagado') throw errorHttp(409, 'Este pago ya fue confirmado y no se puede modificar');
 
     const { datos, efectivo } = await aplicarReglasAtleta(entrada, pago);
+    // Reenviar un pago RECHAZADO lo devuelve a revisión (el administrador lo verifica de nuevo)
+    if (!datos.estado && pago.estado === 'Rechazado') { datos.estado = 'Pendiente'; if (datos.observaciones === undefined) datos.observaciones = ''; }
     const actualizado = await PagosModel.findOneAndUpdate({ _id: id }, datos, { new: true, runValidators: true });
 
     if (efectivo && pago.estado !== ESTADO_PENDIENTE_CONFIRMACION) await avisarEfectivo(actualizado, usuario);
@@ -85,7 +87,7 @@ export const dbAtletaCreaPago = async (usuario, entrada) => {
  *  - Efectivo: queda "Pendiente de confirmación"; los digitales, "Pendiente" hasta que el administrador revise.
  * NO notifica: se avisa con `avisarPedidoEfectivo` cuando la solicitud ya quedó guardada.
  */
-export const dbCrearPagoPedido = async (usuario, { metodoPago, comprobante } = {}, valorTotal) => {
+export const dbCrearPagoPedido = async (usuario, { metodoPago, comprobante, fechaPago, observaciones } = {}, valorTotal) => {
     const metodo = await buscarMetodo(metodoPago);
     const efectivo = esMetodoEfectivo(metodo.nombre);
     const archivo = String(comprobante ?? '').trim();
@@ -98,6 +100,8 @@ export const dbCrearPagoPedido = async (usuario, { metodoPago, comprobante } = {
         estado: efectivo ? ESTADO_PENDIENTE_CONFIRMACION : 'Pendiente',
         metodoPago: metodo._id,
         comprobante: requiereComprobante(metodo) ? archivo : '',
+        ...(fechaPago ? { fechaPago } : {}),
+        ...(observaciones ? { observaciones: String(observaciones).slice(0, 100) } : {}),
         usuario: usuario._id ?? usuario,
     });
     return { pago, efectivo };
