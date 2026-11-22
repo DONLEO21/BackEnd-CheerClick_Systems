@@ -155,3 +155,4 @@ vite.config.ts.timestamp-*
 # Entorno local de Bruno con credenciales personales
 /bruno/Sample API Collection/environments/Desarrollo.yml
 
+/uploads

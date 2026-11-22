@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import PagosModel from "../models/pagos.model.js";
+import MensualidadModel from "../models/mensualidades.model.js";
 import metodoPagoModel from "../models/metodoPago.model.js";
 import { errorHttp } from "../helpers/errores.helpers.js";
 import { esMetodoEfectivo, requiereComprobante, ESTADO_PENDIENTE_CONFIRMACION } from "../helpers/metodoPago.helpers.js";
@@ -51,18 +52,55 @@ const avisarEfectivo = async (pago, usuario) => {
     );
 };
 
-/** PATCH de un pago hecho por un atleta (solo el suyo y mientras no esté confirmado). */
+/**
+ * ¿El atleta ya NO puede pagar/enviar este pago? Devuelve el mensaje del 409 o null si puede.
+ *  - Pagado: ya fue confirmado.
+ *  - En verificación: ya envió método/comprobante (o pidió pagar en efectivo) y el administrador aún no lo revisa.
+ *  - Puede pagar: un pago generado sin envío (Pendiente/Vencido sin método) o uno RECHAZADO (reintento).
+ */
+const motivoBloqueo = (pago, esMensualidad) => {
+    if (pago.estado === 'Pagado') return esMensualidad ? 'Esta mensualidad ya fue pagada' : 'Este pago ya fue pagado';
+    if (pago.estado === ESTADO_PENDIENTE_CONFIRMACION) return 'Ya hay un pago en verificación';
+    if (['Pendiente', 'Vencido'].includes(pago.estado) && (pago.metodoPago || pago.comprobante)) return 'Ya hay un pago en verificación';
+    return null;
+};
+
+/**
+ * PATCH de un pago hecho por un atleta (solo el suyo). La defensa real contra el doble pago vive AQUÍ:
+ *  1. se valida el estado (409 con mensaje claro) y
+ *  2. la escritura es una actualización condicional ATÓMICA: solo se aplica si el pago sigue "sin enviar" o "rechazado".
+ *     Dos envíos simultáneos (doble clic, dos pestañas) -> uno pasa y el otro recibe 409.
+ */
 export const dbAtletaActualizaPago = async (id, usuario, entrada) => {
     const pago = await PagosModel.findOne({ _id: id, usuario: usuario._id }).lean();
     if (!pago) throw errorHttp(404, 'No se encontró el pago o no te pertenece');
-    if (pago.estado === 'Pagado') throw errorHttp(409, 'Este pago ya fue confirmado y no se puede modificar');
+    const esMensualidad = !!(await MensualidadModel.exists({ pago: id }));
+    const bloqueo = motivoBloqueo(pago, esMensualidad);
+    if (bloqueo) throw errorHttp(409, bloqueo);
 
     const { datos, efectivo } = await aplicarReglasAtleta(entrada, pago);
     // Reenviar un pago RECHAZADO lo devuelve a revisión (el administrador lo verifica de nuevo)
     if (!datos.estado && pago.estado === 'Rechazado') { datos.estado = 'Pendiente'; if (datos.observaciones === undefined) datos.observaciones = ''; }
-    const actualizado = await PagosModel.findOneAndUpdate({ _id: id }, datos, { new: true, runValidators: true });
 
-    if (efectivo && pago.estado !== ESTADO_PENDIENTE_CONFIRMACION) await avisarEfectivo(actualizado, usuario);
+    const actualizado = await PagosModel.findOneAndUpdate(
+        {
+            _id: id,
+            usuario: usuario._id,
+            $or: [
+                { estado: 'Rechazado' },
+                { estado: { $in: ['Pendiente', 'Vencido'] }, metodoPago: null, comprobante: { $in: ['', null] } },
+            ],
+        },
+        datos,
+        { returnDocument: 'after', runValidators: true }
+    );
+    if (!actualizado) {
+        // Otro envío se adelantó entre la lectura y la escritura
+        const actual = await PagosModel.findById(id).lean();
+        throw errorHttp(409, motivoBloqueo(actual ?? pago, esMensualidad) ?? 'Ya hay un pago en verificación');
+    }
+
+    if (efectivo) await avisarEfectivo(actualizado, usuario);
     return actualizado;
 };
 
