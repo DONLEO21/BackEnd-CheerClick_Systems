@@ -8,6 +8,8 @@ import { dbGetContactosByUsuario, dbCreateContactoE, dbUpdateContactoE } from ".
 import { dbGetUsuarioConPlan, dbFindUserByEmail, dbUpdateUsuario } from "../services/usuarios.services.js";
 import { sendCorreoCambiadoEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
+import usuarioModel from "../models/usuarios.model.js";
+import { validarFechaNacimiento } from "../helpers/fecha.helpers.js";
 import { guardarFoto, borrarFoto, guardarCertificado, borrarCertificado, rutaCertificado } from "../services/archivos.services.js";
 
 const responderError = (res, error, msg) => {
@@ -99,6 +101,11 @@ const createPerfilUsuario = async (req, res) => {
         const errors = validarOtros(inputData);
         if (errors) return res.status(400).json({ errors });
 
+        if (inputData.fechaNacimiento !== undefined) {
+            const mensaje = validarFechaNacimiento(inputData.fechaNacimiento, req.userFound.rol);
+            if (mensaje) return res.status(400).json({ errors: { fechaNacimiento: mensaje } });
+        }
+
         // Un usuario solo puede tener un perfil
         const existente = await dbGetPerfilByUsuario(req.userFound._id);
         if (existente) {
@@ -125,6 +132,15 @@ const updatePerfilUsuario = async (req, res) => {
 
         const errors = validarOtros(inputData);
         if (errors) return res.status(400).json({ errors });
+
+        if (inputData.fechaNacimiento !== undefined) {
+            // La regla depende del rol del DUEÑO del perfil (el administrador puede estar editando el de otra persona)
+            const dueno = String(perfil.perteneceA) === String(req.userFound._id)
+                ? req.userFound
+                : await usuarioModel.findById(perfil.perteneceA).select('rol').lean();
+            const mensaje = validarFechaNacimiento(inputData.fechaNacimiento, dueno?.rol);
+            if (mensaje) return res.status(400).json({ errors: { fechaNacimiento: mensaje } });
+        }
 
         const data = await dbUpdatePerfilUsuario(req.params.id, inputData);
 
@@ -234,8 +250,9 @@ const updateMiPerfil = async (req, res) => {
                 if (body[campo] !== undefined) datosPerfil[campo] = body[campo];
             }
 
-            if (datosPerfil.fechaNacimiento !== undefined && isNaN(new Date(datosPerfil.fechaNacimiento))) {
-                return res.status(400).json({ errors: { fechaNacimiento: 'La fecha no es válida' } });
+            if (datosPerfil.fechaNacimiento !== undefined) {
+                const mensaje = validarFechaNacimiento(datosPerfil.fechaNacimiento, user.rol);
+                if (mensaje) return res.status(400).json({ errors: { fechaNacimiento: mensaje } });
             }
 
             // Campos de una sola vez: el administrador no tiene límite
