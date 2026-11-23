@@ -1,6 +1,6 @@
 import { dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbFindUserByEmail, dbGenerarCodigo, dbValidarNivelYPlan, REQUISITOS_ROL, PREFIJOS } from "../services/usuarios.services.js";
 import { generarPassword } from "../helpers/bcrypt.helpers.js";
-import { sendCorreoCambiadoEmail, sendCambioCuentaEmail } from "../services/email.services.js";
+import { sendCorreoCambiadoEmail, sendCambioCuentaEmail, sendCuentaCreadaEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
 
 const responderError = (res, error, msg) => {
@@ -61,12 +61,26 @@ const createUsuario = async (req, res) => {
             return res.status(409).json({ errors: { email: 'Este correo ya está registrado' } });
         }
 
+        // Se guarda en texto plano solo por envio al correo; en la BD queda encriptada
+        const contrasenaTemporal = usuario.contrasena;
+
         usuario.contrasena = generarPassword(usuario.contrasena);
         usuario.codigo = await dbGenerarCodigo(usuario.rol);
+        // La contraseña la eligió el admin, asi que el usuario debe cambiarla al ingresar
+        usuario.debeCambiarContrasena = true;
 
         const nuevo = await dbCreateUsuario(usuario);
 
-        res.status(201).json({ msg: 'Registra usuario', data: sinContrasena(nuevo) });
+        // Si el correo falla, la cuenta igual queda creada
+        let correoEnviado = true;
+        try {
+            await sendCuentaCreadaEmail(nuevo.email, nuevo.nombre, nuevo.rol, contrasenaTemporal);
+        } catch (error) {
+            console.error(error);
+            correoEnviado = false;
+        }
+
+        res.status(201).json({ msg: 'Registra usuario', correoEnviado, data: sinContrasena(nuevo) });
     }
     catch (error) {
         responderError(res, error, 'Error al registrar usuario');
@@ -94,6 +108,7 @@ const updateUsuario = async (req, res) => {
         delete inputData.estadoSolicitud;
         delete inputData.rol;
         delete inputData.status;
+        delete inputData.debeCambiarContrasena;
 
         // Correo: en minúscula y sin repetir
         if (inputData.email) {

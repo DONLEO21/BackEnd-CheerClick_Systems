@@ -68,6 +68,12 @@ const usuarioSchema = new Schema({
         enum: ['Pendiente', 'Aprobada', 'Rechazada'],
         default: 'Aprobada'   // Los usuarios que ya existen quedan aprobados
     },
+    // Contraseña creada por admin,
+    // así que el usuario debe cambiarla antes de usar el sistema
+    debeCambiarContrasena: {
+        type: Boolean,
+        default: false
+    },
     // Preferencias de comunicación
     preferencias: {
         notificaciones: { type: Boolean, default: true },

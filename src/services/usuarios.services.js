@@ -83,6 +83,11 @@ const dbGetUsuario = async (id) => {
     return await usuarioModel.findOne({ _id : id}).select('-contrasena')
 }
 
+// Incluye el hash: solo para comparar la contraseña actual
+const dbGetUsuarioConContrasena = async ( id ) => {
+    return await usuarioModel.findById( id );
+}
+
 const dbGetUserForReset = async ( email ) => {
     return await usuarioModel
         .findOne({ email: email, status: true })
@@ -102,7 +107,7 @@ const dbGetUserByEmail = async ( email , status = true) => {
 }
 
 export {
-    dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbGetUserByEmail,
+    dbCreateUsuario, dbGetUsuario, dbGetUsuarioConContrasena, dbUpdateUsuario, dbGetUserByEmail,
     dbGetUserForReset, dbGenerarCodigo, PREFIJOS, dbFindUserByEmail, REQUISITOS_ROL,
     dbListUsuarios, dbCountUsuarios, dbGetUsuarioConPlan, dbValidarNivelYPlan
 }

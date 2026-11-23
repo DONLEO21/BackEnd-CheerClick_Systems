@@ -1,6 +1,14 @@
 import { validateToken } from "../helpers/jwt.helpers.js";
 import { dbGetUsuario } from "../services/usuarios.services.js";
 
+const rutaActual = ( req ) => `${ req.method } ${ ( req.baseUrl + req.path ).replace( /\/+$/, '' ) }`;
+
+// Lo único permitido mientras el usuario no cambie la contraseña que le asignó el admin
+const RUTAS_CAMBIO_CONTRASENA = [
+    'GET /api/auth/renovar-token',
+    'PATCH /api/auth/cambiar-contrasena'
+];
+
 const authMiddleware = async (req, res, next) => {
     try {
         const token = req.header('X-Token');
@@ -28,6 +36,14 @@ const authMiddleware = async (req, res, next) => {
 
         if ( ! userFound || ! userFound.status ) {
             return res.status(401).json({msg: 'El usuario no esta activo o el usuario no esta registrado en el sistema'});
+        }
+
+        // Contraseña asignada por el admin: hasta cambiarla, solo puede hacer eso (o renovar el token)
+        if ( userFound.debeCambiarContrasena && ! RUTAS_CAMBIO_CONTRASENA.includes( rutaActual( req ) ) ) {
+            return res.status(403).json({
+                msg: 'Debes cambiar tu contraseña antes de continuar',
+                codigo: 'CAMBIO_CONTRASENA_REQUERIDO'
+            });
         }
 
         req.userFound = userFound;

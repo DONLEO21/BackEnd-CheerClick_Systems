@@ -114,8 +114,45 @@ const sendCambioCuentaEmail = async (to, nombre, mensaje) => {
   });
 };
 
+// La contraseña puede traer < > & ": se escapa para que el correo la muestre tal cual
+const escaparHtml = (texto) => String(texto)
+  .replace(/&/g, "&amp;")
+  .replace(/</g, "&lt;")
+  .replace(/>/g, "&gt;")
+  .replace(/"/g, "&quot;");
+
+// Cuenta creada por el administrador: datos de acceso con la contraseña temporal
+const sendCuentaCreadaEmail = async (to, nombre, rol, contrasenaTemporal) => {
+  await transporter.sendMail({
+    from: process.env.MAIL_FROM,
+    to: to,
+    subject: "Tu cuenta fue creada - CheerClick",
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:440px;margin:auto;border:1px solid #e4e4e7;border-radius:12px;padding:24px;">
+        <h2 style="text-align:center;color:#18181b;margin-top:0;">¡Bienvenido a CheerClick Systems!</h2>
+        <p style="color:#3f3f46;line-height:1.5;">
+          Hola ${nombre}. El administrador del club creó tu cuenta con el rol de <b>${rol}</b>. Estos son tus datos de acceso:
+        </p>
+
+        <div style="background-color:#f4f4f5;border:1px solid #e4e4e7;border-radius:8px;padding:16px;margin:24px 0;color:#18181b;">
+          <p style="margin:0 0 8px;"><b>Correo:</b> ${to}</p>
+          <p style="margin:0;"><b>Contraseña temporal:</b> <span style="font-family:monospace;font-size:16px;">${escaparHtml(contrasenaTemporal)}</span></p>
+        </div>
+
+        <p style="color:#3f3f46;line-height:1.5;">
+          Al iniciar sesión por primera vez el sistema te pedirá cambiar esta contraseña por una que solo tú conozcas.
+        </p>
+        <p style="color:#71717a;font-size:14px;margin-bottom:0;">
+          Si no esperabas este correo, contacta al club.
+        </p>
+      </div>
+    `,
+  });
+};
+
 export {
   sendResetCodeEmail,
+  sendCuentaCreadaEmail,
   sendSolicitudEmail,
   sendCorreoCambiadoEmail,
   sendContrasenaCambiadaEmail,

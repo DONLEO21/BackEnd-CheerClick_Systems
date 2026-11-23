@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { verifyPassword, generarPassword } from "../helpers/bcrypt.helpers.js";
-import { dbGetUserByEmail, dbGetUserForReset, dbUpdateUsuario, dbCreateUsuario, dbFindUserByEmail, dbValidarNivelYPlan } from "../services/usuarios.services.js";
+import { dbGetUserByEmail, dbGetUserForReset, dbUpdateUsuario, dbCreateUsuario, dbFindUserByEmail, dbValidarNivelYPlan, dbGetUsuarioConContrasena } from "../services/usuarios.services.js";
 import { generateToken } from "../helpers/jwt.helpers.js";
 import { sendResetCodeEmail, sendContrasenaCambiadaEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
@@ -306,9 +306,10 @@ const restablecerContrasena = async (req, res) => {
       return res.status(result.status).json({ msg: result.msg });
     }
 
-    // Guardar la nueva contraseña encriptada y borrar el código para que no se reutilice
+    // Guardar la nueva contraseña encriptada y borrar el código para que no se reutilice.
+    // Si era una contraseña asignada por el admin, ya la eligió el usuario: no hay que pedirla otra vez
     await dbUpdateUsuario(result.user._id, {
-      $set: { contrasena: generarPassword(contrasena), resetAttempts: 0 },
+      $set: { contrasena: generarPassword(contrasena), resetAttempts: 0, debeCambiarContrasena: false },
       $unset: { resetCodeHash: 1, resetCodeExpires: 1 },
     });
 
@@ -327,7 +328,57 @@ const restablecerContrasena = async (req, res) => {
   }
 };
 
+// ---------- Cambiar contraseña (con sesión iniciada) ----------
+// También es el cambio obligatorio del primer ingreso cuando el admin creó la cuenta
+const cambiarContrasena = async (req, res) => {
+  try {
+    const { contrasenaActual, contrasena, confirmarContrasena } = req.body;
+
+    const errors = {};
+    if (!contrasenaActual) errors.contrasenaActual = "Escribe tu contraseña actual";
+    if (!contrasena || contrasena.length < 8) {
+      errors.contrasena = "La contraseña debe tener mínimo 8 caracteres";
+    } else if (contrasena !== confirmarContrasena) {
+      errors.confirmarContrasena = "Las contraseñas no coinciden";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      return res.status(400).json({ errors });
+    }
+
+    const user = await dbGetUsuarioConContrasena(req.userFound._id);
+
+    // 400 y no 401: la sesión es válida, solo la contraseña escrita está mal
+    if (!verifyPassword(contrasenaActual, user.contrasena)) {
+      return res.status(400).json({ errors: { contrasenaActual: "La contraseña actual no es correcta" } });
+    }
+
+    if (verifyPassword(contrasena, user.contrasena)) {
+      return res.status(400).json({ errors: { contrasena: "La nueva contraseña debe ser diferente a la actual" } });
+    }
+
+    await dbUpdateUsuario(user._id, {
+      contrasena: generarPassword(contrasena),
+      debeCambiarContrasena: false,
+    });
+
+    // Aviso de seguridad: siempre por correo, sin importar las preferencias
+    try {
+      await sendContrasenaCambiadaEmail(user.email, user.nombre);
+    } catch (error) {
+      console.error(error);
+    }
+    await notificar(user._id, 'seguridad', 'Tu contraseña fue cambiada');
+
+    res.json({ msg: "¡Contraseña actualizada!" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "No se pudo actualizar la contraseña" });
+  }
+};
+
 export {
   registrarUsuario, loginUsuario, renovarToken,
   olvideContrasena, verificarCodigo, restablecerContrasena,
+  cambiarContrasena,
 };

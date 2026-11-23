@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registrarUsuario, loginUsuario, renovarToken, olvideContrasena, verificarCodigo, restablecerContrasena } from "../controllers/auth.controllers.js";
+import { registrarUsuario, loginUsuario, renovarToken, olvideContrasena, verificarCodigo, restablecerContrasena, cambiarContrasena } from "../controllers/auth.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
 import { loginLimiter, registerLimiter, forgotLimiter, resetLimiter } from "../middlewares/rateLimit.middlewares.js";
 
@@ -19,5 +19,8 @@ router.post( '/olvide-contrasena', forgotLimiter, olvideContrasena );        // 
 router.post( '/reenviar-codigo', forgotLimiter, olvideContrasena );          // Reenviar código (misma lógica)
 router.post( '/verificar-codigo', resetLimiter, verificarCodigo );           // Paso 2: validar el código
 router.post( '/restablecer-contrasena', resetLimiter, restablecerContrasena ); // Paso 3: nueva contraseña
+
+// 5. Cambiar contraseña con sesión iniciada, obligatorio si el admin creo la cuenta
+router.patch( '/cambiar-contrasena', resetLimiter, authMiddleware, cambiarContrasena );
 
 export default router;
