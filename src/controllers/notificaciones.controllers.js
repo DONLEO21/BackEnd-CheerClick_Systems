@@ -1,4 +1,4 @@
-import { dbListNotificaciones, dbMarcarLeida, dbMarcarTodasLeidas } from "../services/notificaciones.services.js";
+import { dbListNotificaciones, dbContarSinLeer, dbMarcarLeida, dbMarcarTodasLeidas } from "../services/notificaciones.services.js";
 
 // Lista las notificaciones del usuario logueado
 const listarNotificaciones = async ( req, res ) => {
@@ -10,6 +10,17 @@ const listarNotificaciones = async ( req, res ) => {
     } catch (error) {
         console.error( error );
         res.status(500).json({ msg: 'No se pudieron obtener las notificaciones' });
+    }
+}
+
+// Contador de no leídas (liviano: lo consulta la campanita cada cierto tiempo)
+const contarSinLeer = async ( req, res ) => {
+    try {
+        const sinLeer = await dbContarSinLeer( req.userFound._id );
+        res.json({ msg: 'Notificaciones sin leer', data: { sinLeer } });
+    } catch (error) {
+        console.error( error );
+        res.status(500).json({ msg: 'No se pudo contar las notificaciones' });
     }
 }
 
@@ -38,4 +49,4 @@ const marcarLeida = async ( req, res ) => {
     }
 }
 
-export { listarNotificaciones, marcarTodasLeidas, marcarLeida }
+export { listarNotificaciones, contarSinLeer, marcarTodasLeidas, marcarLeida }
