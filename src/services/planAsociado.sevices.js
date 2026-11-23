@@ -8,6 +8,11 @@ const dbGetPlanAsociado = async () => {
     return await PlanAsociadoModel.find();
 }
 
+// Público (registro): solo planes ACTIVOS y los datos que el formulario necesita
+const dbGetPlanesPublico = async () => {
+    return await PlanAsociadoModel.find({ estado: 'Activo' }).select('nombre descripcion valor').sort({ nombre: 1 });
+}
+
 const dbDeletePlanAsociado = async (id) => {
     return await PlanAsociadoModel.findOneAndDelete({ _id: id})
 }
@@ -31,5 +36,6 @@ export {
     dbGetPlanAsociado, 
     dbDeletePlanAsociado,
     dbUpdatePlanAsociado,
-    dbGetPlanesAsociados
+    dbGetPlanesAsociados,
+    dbGetPlanesPublico
 }

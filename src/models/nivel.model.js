@@ -1,4 +1,5 @@
 import {Schema, model} from "mongoose";
+import { pluginCodigo } from "../helpers/consecutivo.helpers.js";
 
 const NivelSchema = new Schema({
     nombre : {
@@ -33,6 +34,9 @@ const NivelSchema = new Schema({
     versionKey: false
 });
 
+
+// Código visible consecutivo NV001, NV002… (el _id interno se conserva para las relaciones)
+NivelSchema.plugin(pluginCodigo, 'NV');
 
 const NivelModel= model('Nivel', NivelSchema);
 

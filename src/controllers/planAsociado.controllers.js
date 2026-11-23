@@ -1,4 +1,4 @@
-import { dbCreatePlanAsociado, dbDeletePlanAsociado, dbGetPlanAsociado, dbGetPlanesAsociados, dbUpdatePlanAsociado } from "../services/planAsociado.sevices.js";
+import { dbCreatePlanAsociado, dbDeletePlanAsociado, dbGetPlanAsociado, dbGetPlanesAsociados, dbGetPlanesPublico, dbUpdatePlanAsociado } from "../services/planAsociado.sevices.js";
 
 const CreatePlanAsociado = async (req, res) => {
     try {
@@ -41,6 +41,19 @@ const GetPlanAsociado = async (req, res) => {
         console.error(error);
 
         return res.status(500).json({ msg: 'No se pudo consultar los planes asociados' });
+    }
+};
+
+// GET /api/plan-asociado/publico  (SIN token): planes activos para el formulario de registro
+const GetPlanesPublico = async (req, res) => {
+    try {
+        const data = await dbGetPlanesPublico();
+
+        return res.status(200).json({ msg: 'Planes disponibles', data: data });
+    } catch (error) {
+        console.error(error);
+
+        return res.status(500).json({ msg: 'No se pudo consultar los planes' });
     }
 };
 
@@ -144,5 +157,6 @@ export {
     GetPlanAsociado,
     DeletePlanAsociado,
     UpdatePlanAsociado,
-    GetPlanesAsociados
+    GetPlanesAsociados,
+    GetPlanesPublico
 };
