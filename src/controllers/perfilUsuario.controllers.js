@@ -10,7 +10,7 @@ import { sendCorreoCambiadoEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
 import usuarioModel from "../models/usuarios.model.js";
 import { validarFechaNacimiento } from "../helpers/fecha.helpers.js";
-import { guardarFoto, borrarFoto, guardarCertificado, borrarCertificado, rutaCertificado } from "../services/archivos.services.js";
+import { guardarFoto, borrarFoto, guardarCertificado, borrarCertificado, rutaCertificado, nombreDescargaCertificado } from "../services/archivos.services.js";
 
 const responderError = (res, error, msg) => {
     console.error(error);
@@ -369,6 +369,8 @@ const descargarMiCertificado = async (req, res) => {
         if (!perfil?.certificadoEps) {
             return res.status(404).json({ msg: 'Aún no has subido tu certificado de EPS' });
         }
+
+        res.setHeader('Content-Disposition', `inline; filename="${nombreDescargaCertificado(req.userFound, perfil.certificadoEps)}"`);
 
         res.sendFile(rutaCertificado(perfil.certificadoEps), error => {
             if (error && !res.headersSent) {

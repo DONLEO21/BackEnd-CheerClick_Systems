@@ -4,6 +4,7 @@ import {
 } from "../services/rendimiento.services.js";
 import { responderError } from "../helpers/errores.helpers.js";
 import { nivelesDelEntrenador, validarAccesoAtleta, validarAccesoNivel } from "../helpers/acceso.helpers.js";
+import { actuaComoEntrenador } from "../helpers/roles.helpers.js";
 
 // "me" = el usuario del token (el atleta no necesita conocer su propio id)
 const resolverAtletaId = (req) => (req.params.id === 'me' ? String(req.userFound._id) : req.params.id);
@@ -43,7 +44,7 @@ const getRendimientoAtleta = async (req, res) => {
 const getResumenRendimiento = async (req, res) => {
     try {
         let nivel = req.query.nivel;
-        if (req.userFound.rol === 'Entrenador') {
+        if (actuaComoEntrenador(req.userFound)) {
             if (nivel) {
                 await validarAccesoNivel(req.userFound, nivel);
             } else {

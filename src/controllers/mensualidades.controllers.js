@@ -1,5 +1,6 @@
 import { dbCreateMensualidad, dbGetMensualidad, dbGetMensualidades, dbUpdateMensualidad } from "../services/mensualidades.services.js";
-import { generarMensualidadesDelMes } from "../services/generacionMensualidades.services.js";
+import { generarMensualidadesDelMes, asegurarMensualidadActual, marcarVencidas, diaVencimiento, periodoDe } from "../services/generacionMensualidades.services.js";
+import { dbGetUsuarioConPlan } from "../services/usuarios.services.js";
 import { responderError } from "../helpers/errores.helpers.js";
 
 const getFiltroPorRol = (user) => {
@@ -55,6 +56,27 @@ const GenerarMensualidades = async (req, res) => {
     }
 };
 
+// GET /api/mensualidades/mi-plan  (atleta): su plan VIGENTE (el actual del usuario, no el de la última mensualidad), el valor
+// del plan y el día de corte configurado. Con esto "Mi plan de membresía" muestra datos reales aunque aún no haya mensualidades.
+const GetMiPlan = async (req, res) => {
+    try {
+        const usuario = await dbGetUsuarioConPlan(req.userFound._id);
+        const plan = usuario?.planAsociado ?? null;
+        return res.json({
+            success: true,
+            msg: 'Plan vigente del atleta',
+            data: {
+                plan: plan ? { _id: plan._id, nombre: plan.nombre, valor: plan.valor } : null,
+                nivel: usuario?.nivel?.nombre ?? null,
+                diaCorte: diaVencimiento(),
+                periodoActual: periodoDe(),
+            },
+        });
+    } catch (error) {
+        responderError(res, error, 'No se pudo consultar tu plan');
+    }
+};
+
 const GetMensualidad = async (req, res) => {
     try {
         const filter = getFiltroPorRol(req.userFound);
@@ -62,6 +84,11 @@ const GetMensualidad = async (req, res) => {
         if (filter === null) {
             return res.status(403).json({ msg: 'No tienes permisos para consultar las mensualidades' });
         }
+
+        // Recuperación perezosa: un atleta activo con plan al que le falte la mensualidad del mes la recibe al abrir sus pagos;
+        // y lo que sigue sin enviarse después de su vencimiento pasa a Vencido.
+        if (req.userFound.rol === 'Atleta') await asegurarMensualidadActual(req.userFound._id);
+        await marcarVencidas().catch((e) => console.error('[mensualidades] marcarVencidas', e));
 
         let data = await dbGetMensualidad(filter);
 
@@ -158,5 +185,6 @@ export {
     GetMensualidad,
     UpdateMensualidad,
     GetMensualidades,
-    GenerarMensualidades
+    GenerarMensualidades,
+    GetMiPlan
 };

@@ -5,7 +5,10 @@ import { dbGetPerfilByUsuario } from "../services/perfilUsuario.services.js";
 import { dbGetContactosByUsuario } from "../services/contactoEmergencia.services.js";
 import { sendSolicitudEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
-import { rutaCertificado } from "../services/archivos.services.js";
+import { rutaCertificado, nombreDescargaCertificado } from "../services/archivos.services.js";
+import { asegurarMensualidadActual } from "../services/generacionMensualidades.services.js";
+import usuarioModel from "../models/usuarios.model.js";
+import { registrarAuditoria } from "../helpers/auditoria.helpers.js";
 
 const ESTADOS = ['Pendiente', 'Aprobada', 'Rechazada'];
 
@@ -110,6 +113,9 @@ const descargarCertificadoEps = async ( req, res ) => {
             return res.status(404).json({ msg: 'Este usuario no tiene certificado de EPS' });
         }
 
+        // Documento de salud: inline para verlo en el navegador, con nombre claro para descargarlo (el cliente lo pide con su token)
+        const dueno = await dbGetUsuario( req.params.id );
+        res.setHeader('Content-Disposition', `inline; filename="${nombreDescargaCertificado( dueno, perfil.certificadoEps )}"`);
         res.sendFile( rutaCertificado( perfil.certificadoEps ), error => {
             if( error && ! res.headersSent ) {
                 res.status(404).json({ msg: 'No se encontró el archivo del certificado' });
@@ -146,6 +152,9 @@ const aprobarSolicitud = async ( req, res ) => {
             rol: rol,
             codigo: await dbGenerarCodigo( rol )
         });
+
+        // Un atleta aprobado con plan ya debe ver su mensualidad del mes pendiente por pagar (idempotente)
+        if( rol === 'Atleta' ) await asegurarMensualidadActual( id );
 
         // Si el correo falla, la aprobación igual queda guardada
         let correoEnviado = true;
@@ -274,6 +283,14 @@ const cambiarRol = async ( req, res ) => {
             return res.status(404).json({ msg: 'Usuario no encontrado' });
         }
 
+        // Nunca puede quedar el sistema sin administradores
+        if( usuario.rol === 'Administrador' && rol !== 'Administrador' ) {
+            const otros = await usuarioModel.countDocuments({ rol: 'Administrador', status: true, _id: { $ne: usuario._id } });
+            if( otros === 0 ) {
+                return res.status(409).json({ msg: 'No se puede quitar el último administrador del sistema' });
+            }
+        }
+
         if( usuario.estadoSolicitud !== 'Aprobada' ) {
             return res.status(409).json({ msg: 'Solo se puede cambiar el rol de cuentas aprobadas' });
         }
@@ -283,7 +300,9 @@ const cambiarRol = async ( req, res ) => {
         }
 
         // El código cambia con el rol: pasa de AT003 a EN001, por ejemplo
-        const data = await dbUpdateUsuario( id, { rol: rol, codigo: await dbGenerarCodigo( rol ) } );
+        // Los roles adicionales solo tienen sentido en un administrador
+        const data = await dbUpdateUsuario( id, { rol: rol, codigo: await dbGenerarCodigo( rol ), ...( rol !== 'Administrador' ? { rolesAdicionales: [] } : {} ) } );
+        await registrarAuditoria({ actor: req.userFound, accion: 'cambiar-rol', entidadId: usuario._id, cambios: [{ campo: 'rol', anterior: usuario.rol, nuevo: rol }] });
 
         // Solo notificación interna (sin correo)
         await notificar( id, 'cuenta', `Tu rol cambió a ${rol}` );

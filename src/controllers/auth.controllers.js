@@ -2,8 +2,12 @@ import crypto from "node:crypto";
 import { verifyPassword, generarPassword } from "../helpers/bcrypt.helpers.js";
 import { dbGetUserByEmail, dbGetUserForReset, dbUpdateUsuario, dbCreateUsuario, dbFindUserByEmail, dbValidarNivelYPlan } from "../services/usuarios.services.js";
 import { generateToken } from "../helpers/jwt.helpers.js";
+import { rolesDe } from "../helpers/roles.helpers.js";
+import { EMAIL_REGEX } from "../helpers/validacionesUsuario.helpers.js";
 import { sendResetCodeEmail, sendContrasenaCambiadaEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
+import usuarioModel from "../models/usuarios.model.js";
+import { estadoDePerfil } from "../helpers/perfilCompleto.helpers.js";
 
 // Registro público
 const registrarUsuario = async (req, res) => {
@@ -17,6 +21,7 @@ const registrarUsuario = async (req, res) => {
     if (!nombre?.trim()) errors.nombre = 'El nombre es obligatorio';
     if (!apellido?.trim()) errors.apellido = 'El apellido es obligatorio';
     if (!email) errors.email = 'El correo es obligatorio';
+    else if (!EMAIL_REGEX.test(email)) errors.email = 'El correo no es válido';
 
     if (!contrasena || contrasena.length < 8) {
       errors.contrasena = 'La contraseña debe tener mínimo 8 caracteres';
@@ -131,6 +136,7 @@ const loginUsuario = async (req, res) => {
       apellido: userFound.apellido,
       email: userFound.email,
       rol: userFound.rol,
+      roles: rolesDe(userFound),
       status: userFound.status,
     };
     const token = generateToken(payload);
@@ -142,7 +148,7 @@ const loginUsuario = async (req, res) => {
     res.json({
       msg: "Login de usuario",
       token: token,
-      data: jsonObj,
+      data: { ...jsonObj, ...(await estadoDePerfil(userFound)) },
     });
   } catch (error) {
     console.error(error);
@@ -150,7 +156,7 @@ const loginUsuario = async (req, res) => {
   }
 };
 
-const renovarToken = (req, res) => {
+const renovarToken = async (req, res) => {
   try {
     const userFound = req.userFound;
 
@@ -160,6 +166,7 @@ const renovarToken = (req, res) => {
       apellido: userFound.apellido,
       email: userFound.email,
       rol: userFound.rol,
+      roles: rolesDe(userFound),
       status: userFound.status,
     };
     const newToken = generateToken(newPayload);
@@ -171,7 +178,7 @@ const renovarToken = (req, res) => {
     res.json({
       msg: "Autenticidad de Token verficada con exito",
       token: newToken,
-      data: jsOb,
+      data: { ...jsOb, ...(await estadoDePerfil(userFound)) },
     });
   } catch (error) {
     console.error(error);
@@ -308,7 +315,7 @@ const restablecerContrasena = async (req, res) => {
 
     // Guardar la nueva contraseña encriptada y borrar el código para que no se reutilice
     await dbUpdateUsuario(result.user._id, {
-      $set: { contrasena: generarPassword(contrasena), resetAttempts: 0 },
+      $set: { contrasena: generarPassword(contrasena), resetAttempts: 0, debeCambiarClave: false, claveCambiadaEn: new Date() },
       $unset: { resetCodeHash: 1, resetCodeExpires: 1 },
     });
 
@@ -327,7 +334,43 @@ const restablecerContrasena = async (req, res) => {
   }
 };
 
+// PATCH /api/auth/cambiar-contrasena { actual, nueva, confirmar }
+// Política: mínimo 8 caracteres (la misma del registro) y distinta de la actual. Al cambiarla se quita la marca de contraseña
+// temporal, se invalidan los tokens anteriores y se entrega uno nuevo para seguir en esta sesión.
+const cambiarContrasena = async (req, res) => {
+  try {
+    const { actual, nueva, confirmar } = req.body ?? {};
+    const errors = {};
+    if (!actual) errors.actual = "Escribe tu contraseña actual";
+    if (!nueva || String(nueva).length < 8) errors.nueva = "La contraseña debe tener mínimo 8 caracteres";
+    else if (actual && nueva === actual) errors.nueva = "La contraseña nueva debe ser distinta de la actual";
+    if (nueva && confirmar !== nueva) errors.confirmar = "Las contraseñas no coinciden";
+    if (Object.keys(errors).length) return res.status(400).json({ success: false, msg: Object.values(errors)[0], errors });
+
+    const usuario = await usuarioModel.findById(req.userFound._id);
+    if (!verifyPassword(actual, usuario.contrasena)) {
+      return res.status(400).json({ success: false, msg: "La contraseña actual no es correcta", errors: { actual: "La contraseña actual no es correcta" } });
+    }
+
+    usuario.contrasena = generarPassword(nueva);
+    usuario.debeCambiarClave = false;
+    usuario.claveCambiadaEn = new Date();
+    await usuario.save({ validateModifiedOnly: true });
+
+    try { await sendContrasenaCambiadaEmail(usuario.email, usuario.nombre); } catch (error) { console.error(error); }
+    await notificar(usuario._id, "seguridad", "Tu contraseña fue cambiada");
+
+    const token = generateToken({ _id: usuario._id, nombre: usuario.nombre, apellido: usuario.apellido, email: usuario.email, rol: usuario.rol, roles: rolesDe(usuario), status: usuario.status });
+    const jsonObj = usuario.toObject();
+    delete jsonObj.contrasena;
+    res.json({ msg: "Contraseña actualizada", token, data: { ...jsonObj, ...(await estadoDePerfil(usuario)) } });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "No se pudo cambiar la contraseña" });
+  }
+};
+
 export {
-  registrarUsuario, loginUsuario, renovarToken,
+  registrarUsuario, loginUsuario, renovarToken, cambiarContrasena,
   olvideContrasena, verificarCodigo, restablecerContrasena,
 };

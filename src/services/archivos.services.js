@@ -74,7 +74,18 @@ const borrarCertificado = async ( nombre ) => {
 // Ruta absoluta del certificado 
 const rutaCertificado = ( nombre ) => path.join( CARPETA_CERTIFICADOS, path.basename( nombre ) );
 
+/**
+ * Nombre con el que se descarga el certificado de EPS: certificado-eps-{codigo}-{apellido}.{ext}
+ * (sin tildes ni espacios; la extensión es la del archivo guardado). Nunca expone el nombre interno del archivo.
+ */
+const nombreDescargaCertificado = (usuario, archivo) => {
+    const slug = (t) => String(t ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    const ext = String(archivo ?? '').split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'pdf';
+    return `${['certificado-eps', slug(usuario?.codigo), slug(usuario?.apellido)].filter(Boolean).join('-')}.${ext}`;
+};
+
 export {
+    nombreDescargaCertificado,
     subirFotoMiddleware, subirCertificadoMiddleware,
     guardarFoto, guardarCertificado,
     borrarFoto, borrarCertificado,

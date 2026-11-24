@@ -1,6 +1,7 @@
 import { dbCreateHabilidad, dbDeleteHabilidad, dbGetHabilidad, dbGetHabilidades, dbUpdateHabilidad } from "../services/habilidades.services.js";
 import { nivelesDelEntrenador, validarAccesoNivel } from "../helpers/acceso.helpers.js";
 import { responderError } from "../helpers/errores.helpers.js";
+import { actuaComoEntrenador } from "../helpers/roles.helpers.js";
 
 const getHabilidades = async (req, res) => {
     try {
@@ -9,7 +10,7 @@ const getHabilidades = async (req, res) => {
         // ?nivelId= filtra por nivel. El entrenador solo puede consultar SUS niveles (validado aquí, no en el frontend):
         // sin nivelId se le devuelven las habilidades de todos sus niveles.
         let filtroNivel = nivelId || undefined;
-        if (req.userFound?.rol === 'Entrenador') {
+        if (actuaComoEntrenador(req.userFound)) {
             if (nivelId) await validarAccesoNivel(req.userFound, nivelId);
             else filtroNivel = { $in: await nivelesDelEntrenador(req.userFound._id) };
         }

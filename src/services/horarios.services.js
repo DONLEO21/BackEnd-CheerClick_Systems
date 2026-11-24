@@ -1,13 +1,11 @@
 import HorarioModel from "../models/horario.model.js";
 import NivelModel from "../models/nivel.model.js";
+import { actuaComoEntrenador } from "../helpers/roles.helpers.js";
 
 // El authMiddleware guarda el usuario en req.userFound.
 // Si tu modelo de usuario usa otros nombres para el id o el rol, cámbialos aquí.
 const getUserId = (user) => user?._id || user?.id;
-const esEntrenador = (user) => {
-    const rol = user?.rol; // puede ser texto o un objeto con nombre
-    return (typeof rol === "object" ? rol?.nombre : rol) === "Entrenador";
-};
+const esEntrenador = (user) => actuaComoEntrenador(user);
 
 // Error 403 (sin permiso). El controlador lo convierte en respuesta.
 const errorSinPermiso = () => {

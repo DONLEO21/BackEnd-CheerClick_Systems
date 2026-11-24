@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { CreateMensualidad, GenerarMensualidades, GetMensualidad, GetMensualidades, UpdateMensualidad } from "../controllers/mensualidades.controllers.js";
+import { CreateMensualidad, GenerarMensualidades, GetMensualidad, GetMensualidades, GetMiPlan, UpdateMensualidad } from "../controllers/mensualidades.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
 import { authorizationMiddleware } from "../middlewares/authorizationMiddleware.middlewares.js";
 
@@ -14,6 +14,9 @@ router.post('/',[authMiddleware, authorizationMiddleware(['Administrador'])], Cr
 router.post('/generar',[authMiddleware, authorizationMiddleware(['Administrador'])], GenerarMensualidades);
 
 router.get('/', [authMiddleware, authorizationMiddleware(['Administrador', 'Atleta'])], GetMensualidad);
+
+// Plan vigente del atleta (antes de /:id)
+router.get('/mi-plan', [authMiddleware, authorizationMiddleware(['Atleta'])], GetMiPlan);
 
 router.get('/:id',[authMiddleware, authorizationMiddleware(['Administrador', 'Atleta'])], GetMensualidades);
 

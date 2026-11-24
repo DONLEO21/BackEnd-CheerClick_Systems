@@ -1,8 +1,13 @@
+import NivelModel from "../models/nivel.model.js";
+import { validarEntrenadorAsignable } from "./gestionCuentas.controllers.js";
 import { dbCreateNivel, dbGetNivel, dbGetNiveles, dbGetNivelesPublico, dbUpdateNivel } from "../services/niveles.services.js";
 
 const createNivel = async (req, res) => {
     try {
         const inputData = req.body;
+        // El entrenador se asigna por ID y debe poder entrenar (entrenador, o administrador con «También actúa como entrenador»)
+        const errorEntrenador = await validarEntrenadorAsignable(inputData.usuario);
+        if (errorEntrenador) return res.status(400).json({ success: false, errors: { usuario: errorEntrenador } });
         const data = await dbCreateNivel(inputData);
 
         res.status(201).json({ msg: 'Registrar un nivel', data: data });
@@ -58,6 +63,12 @@ const updateNivel = async (req, res) => {
     const id = req.params.id;
     try {
         const inputData = req.body;
+        // Solo se valida si el entrenador CAMBIÓ: guardar otros datos de un nivel cuyo entrenador ya no es válido no se bloquea
+        const actual = inputData.usuario !== undefined ? await NivelModel.findById(id).select('usuario').lean() : null;
+        if (inputData.usuario !== undefined && String(actual?.usuario) !== String(inputData.usuario)) {
+            const errorEntrenador = await validarEntrenadorAsignable(inputData.usuario);
+            if (errorEntrenador) return res.status(400).json({ success: false, errors: { usuario: errorEntrenador } });
+        }
         const data = await dbUpdateNivel(id, inputData);
 
         if (!data) return res.status(404).json({ msg: 'Nivel no encontrado' });

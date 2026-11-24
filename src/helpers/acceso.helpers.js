@@ -1,6 +1,7 @@
 import usuarioModel from "../models/usuarios.model.js";
 import NivelModel from "../models/nivel.model.js";
 import { errorHttp } from "./errores.helpers.js";
+import { actuaComoEntrenador } from "./roles.helpers.js";
 
 // Niveles que dirige un entrenador (el nivel guarda al entrenador asignado en el campo `usuario`).
 // BUG corregido: antes se usaba NivelModel sin importarlo y se consultaba un campo `entrenador` que no existe,
@@ -12,7 +13,7 @@ export const nivelesDelEntrenador = async (entrenadorId) => {
 
 // Un entrenador solo puede tocar sus niveles. Administrador pasa siempre.
 export const validarAccesoNivel = async (usuario, nivelId) => {
-    if (usuario.rol !== 'Entrenador') return;
+    if (!actuaComoEntrenador(usuario)) return;
     const propios = await nivelesDelEntrenador(usuario._id);
     if (propios && !propios.some((id) => String(id) === String(nivelId))) {
         throw errorHttp(403, 'Este nivel no está asignado a tu usuario');
@@ -24,7 +25,7 @@ export const validarAccesoAtleta = async (usuario, atletaId) => {
     if (usuario.rol === 'Atleta' && String(usuario._id) !== String(atletaId)) {
         throw errorHttp(403, 'Solo puedes consultar tu propia información');
     }
-    if (usuario.rol === 'Entrenador') {
+    if (actuaComoEntrenador(usuario)) {
         const atleta = await usuarioModel.findById(atletaId).select('nivel').lean();
         if (!atleta) throw errorHttp(404, 'El atleta no existe');
         if (atleta.nivel) await validarAccesoNivel(usuario, atleta.nivel);
@@ -34,7 +35,7 @@ export const validarAccesoAtleta = async (usuario, atletaId) => {
 // Filtro de asistencias que cada rol puede ver
 export const filtroAsistenciaPorRol = async (usuario, nivelQuery) => {
     if (usuario.rol === 'Atleta') return { usuario: usuario._id };
-    if (usuario.rol === 'Entrenador') {
+    if (actuaComoEntrenador(usuario)) {
         if (nivelQuery) {
             await validarAccesoNivel(usuario, nivelQuery);
             return {};

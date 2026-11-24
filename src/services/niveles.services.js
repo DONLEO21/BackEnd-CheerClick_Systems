@@ -1,16 +1,42 @@
 import NivelModel from "../models/nivel.model.js";
+import { actuaComoEntrenador } from "../helpers/roles.helpers.js";
 import PlantillaHorarioModel from "../models/plantilla_horario.model.js";
+import PerfilUsuarioModel from "../models/perfilUsuario.model.js";
+import usuarioModel from "../models/usuarios.model.js";
+import { puedeEntrenar } from "../helpers/roles.helpers.js";
 
 // El authMiddleware guarda el usuario en req.userFound.
 const getUserId = (user) => user?._id || user?.id;
-const esEntrenador = (user) => {
-    const rol = user?.rol; // puede ser texto o un objeto con nombre
-    return (typeof rol === "object" ? rol?.nombre : rol) === "Entrenador";
-};
+const esEntrenador = (user) => actuaComoEntrenador(user);
 
 const dbCreateNivel = async (newNivel) => {
     return await NivelModel.create(newNivel);
 }
+
+// Agrega a cada nivel el entrenador (si existe), su ID guardado, si es válido y su foto de perfil
+const enriquecerNiveles = async (niveles) => {
+    // Sin populate: el ID guardado del entrenador se conserva SIEMPRE (con populate, un usuario inexistente dejaba `usuario: null`
+    // y el formulario perdía el ID -> tarjeta con «?» y aviso «Selecciona el entrenador del nivel» al guardar).
+    const ids = [...new Set(niveles.map((n) => String(n.usuario)).filter((x) => x && x !== 'undefined'))];
+    const entrenadores = await usuarioModel.find({ _id: { $in: ids } }).select('nombre apellido rol rolesAdicionales status estadoSolicitud').lean();
+    const porId = new Map(entrenadores.map((u) => [String(u._id), u]));
+
+    // Foto por defecto de la tarjeta: la foto de perfil del entrenador asignado (el perfil guarda su dueño en `perteneceA`)
+    const perfiles = await PerfilUsuarioModel.find({ perteneceA: { $in: entrenadores.map((u) => u._id) } }).select('perteneceA fotoPerfil').lean();
+    const fotoDe = Object.fromEntries(perfiles.map((p) => [String(p.perteneceA), p.fotoPerfil]));
+
+    return niveles.map((n) => {
+        const u = porId.get(String(n.usuario)) ?? null;
+        return {
+            ...n,
+            usuarioId: n.usuario ?? null,                                    // ID guardado (aunque el usuario ya no exista)
+            usuario: u ? { _id: u._id, nombre: u.nombre, apellido: u.apellido } : null,
+            // ¿el entrenador existe, está activo y puede entrenar? (si no, la pantalla lo marca)
+            entrenadorValido: !!u && u.status && u.estadoSolicitud === 'Aprobada' && puedeEntrenar(u),
+            fotoEntrenador: u ? (fotoDe[String(u._id)] ?? null) : null,
+        };
+    });
+};
 
 // CAMBIO: populate('usuario') trae al entrenador asignado (el de la tarjeta)
 // Agrega en el segundo parámetro los campos que necesites (ej. la foto). Así evitamos enviar la contraseña.
@@ -25,7 +51,7 @@ const dbGetNivel = async (query = {}, user) => {
         filter.usuario = getUserId(user);
     }
 
-    return await NivelModel.find(filter).populate('usuario', 'nombre apellido');
+    return enriquecerNiveles(await NivelModel.find(filter).lean());
 }
 
 // Público (registro y página de inicio): solo los niveles ACTIVOS y solo los datos que se muestran sin sesión:
@@ -67,7 +93,8 @@ const dbGetNiveles = async (id, user) => {
         filter.usuario = getUserId(user);
     }
 
-    return await NivelModel.findOne(filter).populate('usuario', 'nombre apellido');
+    const nivel = await NivelModel.findOne(filter).lean();
+    return nivel ? (await enriquecerNiveles([nivel]))[0] : null;
 }
 
 export {

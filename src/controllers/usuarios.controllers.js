@@ -2,6 +2,7 @@ import { dbCreateUsuario, dbGetUsuario, dbUpdateUsuario, dbFindUserByEmail, dbGe
 import { generarPassword } from "../helpers/bcrypt.helpers.js";
 import { sendCorreoCambiadoEmail, sendCambioCuentaEmail } from "../services/email.services.js";
 import { notificar } from "../services/notificaciones.services.js";
+import { asegurarMensualidadActual } from "../services/generacionMensualidades.services.js";
 
 const responderError = (res, error, msg) => {
     console.error(error);
@@ -46,6 +47,8 @@ const createUsuario = async (req, res) => {
         delete usuario.resetCodeHash;
         delete usuario.resetCodeExpires;
         delete usuario.resetAttempts;
+        delete usuario.debeCambiarClave;
+        delete usuario.claveCambiadaEn;
 
         if (!usuario.contrasena || usuario.contrasena.length < 8) {
             return res.status(400).json({ errors: { contrasena: 'La contraseña debe tener mínimo 8 caracteres' } });
@@ -63,9 +66,19 @@ const createUsuario = async (req, res) => {
         }
 
         usuario.contrasena = generarPassword(usuario.contrasena);
+        usuario.debeCambiarClave = true;   // contraseña asignada por el administrador: el usuario debe cambiarla al entrar
         usuario.codigo = await dbGenerarCodigo(usuario.rol);
 
+        // «También actúa como entrenador»: solo en administradores (los datos de edad se validan en la edición de perfil)
+        const tambienEntrenador = usuario.tambienEntrenador === true && usuario.rol === 'Administrador';
+        delete usuario.tambienEntrenador;
+        delete usuario.rolesAdicionales;
+        if (tambienEntrenador) usuario.rolesAdicionales = ['Entrenador'];
+
         const nuevo = await dbCreateUsuario(usuario);
+
+        // Un atleta creado por el administrador con plan ya debe tener su mensualidad del mes
+        if (nuevo.rol === 'Atleta' && nuevo.estadoSolicitud === 'Aprobada') await asegurarMensualidadActual(nuevo._id);
 
         res.status(201).json({ msg: 'Registra usuario', data: sinContrasena(nuevo) });
     }
@@ -87,6 +100,8 @@ const updateUsuario = async (req, res) => {
 
         // Campos que nunca se cambian desde aquí
         delete inputData.contrasena;
+        delete inputData.debeCambiarClave;
+        delete inputData.claveCambiadaEn;
         delete inputData.createdBy;
         delete inputData.resetCodeHash;
         delete inputData.resetCodeExpires;

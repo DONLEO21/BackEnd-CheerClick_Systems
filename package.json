@@ -27,7 +27,12 @@
     "auditar:niveles": "node --env-file .env scripts/auditar-niveles.js",
     "auditar:fechas": "node --env-file .env scripts/auditar-fechas-nacimiento.js",
     "auditar:imagenes": "node --env-file .env scripts/auditar-imagenes.js",
-    "auditar:competencias": "node --env-file .env scripts/auditar-competencias.js"
+    "auditar:competencias": "node --env-file .env scripts/auditar-competencias.js",
+    "auditar:usuarios": "node --env-file .env scripts/auditar-usuarios.js",
+    "probar:admin-entrenador": "node --env-file .env tests/admin-entrenador.integracion.mjs",
+    "probar:guardias": "node --env-file .env tests/guardias-sesion.integracion.mjs",
+    "migrar:roles": "node --env-file .env scripts/migrar-roles.js",
+    "backfill:mensualidades": "node --env-file .env scripts/backfill-mensualidades.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

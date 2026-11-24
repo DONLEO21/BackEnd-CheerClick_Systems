@@ -48,6 +48,23 @@ const usuarioSchema = new Schema({
         enum: ['Administrador', 'Atleta', 'Entrenador'],
         default: 'Atleta'
     },
+    // Roles ADICIONALES al principal (p. ej. un administrador que también entrena). Los asigna solo el administrador.
+    rolesAdicionales: {
+        type: [String],
+        enum: ['Entrenador'],
+        default: []
+    },
+    // Contraseña temporal: true cuando el administrador creó la cuenta con una contraseña asignada. Mientras sea true el usuario
+    // solo puede cambiar la contraseña (ver authenticate.middlewares.js). Las cuentas existentes quedan en false.
+    debeCambiarClave: {
+        type: Boolean,
+        default: false
+    },
+    // Cuándo se cambió la contraseña por última vez: los tokens emitidos ANTES de esa fecha dejan de valer.
+    claveCambiadaEn: {
+        type: Date,
+        default: null
+    },
     createdBy : {
         type : Schema.Types.ObjectId,
         ref : 'usuario',

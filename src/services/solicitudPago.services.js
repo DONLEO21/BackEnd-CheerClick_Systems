@@ -80,6 +80,8 @@ export const dbAtletaActualizaPago = async (id, usuario, entrada) => {
 
     const { datos, efectivo } = await aplicarReglasAtleta(entrada, pago);
     // Reenviar un pago RECHAZADO lo devuelve a revisión (el administrador lo verifica de nuevo)
+    // Enviar un pago atrasado (Vencido) también lo deja pendiente de verificación
+    if (!datos.estado && pago.estado === 'Vencido') datos.estado = 'Pendiente';
     if (!datos.estado && pago.estado === 'Rechazado') { datos.estado = 'Pendiente'; if (datos.observaciones === undefined) datos.observaciones = ''; }
 
     const actualizado = await PagosModel.findOneAndUpdate(

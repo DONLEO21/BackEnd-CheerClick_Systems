@@ -66,7 +66,7 @@ conexion().then(async () => {
 // En desarrollo no hace falta: el frontend usa el proxy de Vite (mismo origen).
 const origenesPermitidos = (process.env.CORS_ORIGIN ?? '').split(',').map((o) => o.trim()).filter(Boolean);
 if (origenesPermitidos.length > 0) {
-    app.use(cors({ origin: origenesPermitidos, allowedHeaders: ['Content-Type', 'X-Token'] }));
+    app.use(cors({ origin: origenesPermitidos, allowedHeaders: ['Content-Type', 'X-Token', 'X-Vista'], exposedHeaders: ['Content-Disposition'] }));
 }
 
 //Habilita a la aplicacion para intepretar JSON

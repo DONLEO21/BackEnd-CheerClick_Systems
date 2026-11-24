@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registrarUsuario, loginUsuario, renovarToken, olvideContrasena, verificarCodigo, restablecerContrasena } from "../controllers/auth.controllers.js";
+import { registrarUsuario, loginUsuario, renovarToken, cambiarContrasena, olvideContrasena, verificarCodigo, restablecerContrasena } from "../controllers/auth.controllers.js";
 import { authMiddleware } from "../middlewares/authenticate.middlewares.js";
 import { loginLimiter, registerLimiter, forgotLimiter, resetLimiter } from "../middlewares/rateLimit.middlewares.js";
 
@@ -13,6 +13,9 @@ router.post( '/login', loginLimiter, loginUsuario );
 
 // 3. Renovación de credenciales (token) -> ya exige token, sin límite
 router.get( '/renovar-token', authMiddleware, renovarToken );
+
+// 3.1 Cambio de contraseña estando autenticado (obligatorio con contraseña temporal)
+router.patch( '/cambiar-contrasena', loginLimiter, authMiddleware, cambiarContrasena );
 
 // 4. Recuperar contraseña (3 pasos)
 router.post( '/olvide-contrasena', forgotLimiter, olvideContrasena );        // Paso 1: enviar código al correo
