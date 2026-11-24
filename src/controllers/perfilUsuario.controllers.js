@@ -89,6 +89,35 @@ const quitarCamposProtegidos = (data) => {
     delete data.ediciones;
 }
 
+// ---------- Perfil obligatorio ----------
+
+// Lo que le falta al usuario para tener el perfil completo (vacío = completo).
+// Los datos personales los exige el modelo al crear el perfil; la foto es opcional (se usan las iniciales)
+const faltantesPerfil = (perfil, contactos, rol) => {
+    const faltantes = [];
+    const requeridos = rol === 'Atleta' ? 2 : 1;
+
+    if (!perfil) faltantes.push('datosPersonales');
+    if (!perfil?.certificadoEps) faltantes.push('certificadoEps');
+    if (contactos.length < requeridos) faltantes.push('contactosEmergencia');
+
+    return faltantes;
+}
+
+// Si ya completó todo, se le quita el bloqueo
+const revisarPerfilCompleto = async (user) => {
+    if (!user.debeCompletarPerfil) return;
+
+    const [perfil, contactos] = await Promise.all([
+        dbGetPerfilByUsuario(user._id),
+        dbGetContactosByUsuario(user._id)
+    ]);
+
+    if (faltantesPerfil(perfil, contactos, user.rol).length === 0) {
+        await dbUpdateUsuario(user._id, { debeCompletarPerfil: false });
+    }
+}
+
 const createPerfilUsuario = async (req, res) => {
     try {
         const inputData = req.body;
@@ -113,6 +142,7 @@ const createPerfilUsuario = async (req, res) => {
         }
 
         const data = await dbCreatePerfilUsuario(inputData);
+        await revisarPerfilCompleto(req.userFound);
 
         res.status(201).json({ msg: 'Registra perfil de usuario', data: perfilPublico(data) });
     }
@@ -187,7 +217,9 @@ const getMiPerfil = async (req, res) => {
                 usuario,
                 perfil: perfilObj,
                 camposBloqueados,
-                contactos
+                contactos,
+                // El frontend mostrara que falta completar mientras usuario.debeCompletarPerfil sea true
+                faltantes: faltantesPerfil(perfil, contactos, usuario.rol)
             }
         });
     }
@@ -353,6 +385,7 @@ const updateMiCertificado = async (req, res) => {
         const nombre = await guardarCertificado(req.file);
         await dbUpdatePerfilUsuario(perfil._id, { certificadoEps: nombre });
         await borrarCertificado(perfil.certificadoEps);
+        await revisarPerfilCompleto(req.userFound);
 
         res.json({ msg: 'Certificado de EPS actualizado', tieneCertificadoEps: true });
     }
@@ -456,6 +489,7 @@ const updateMisContactos = async (req, res) => {
         }
 
         const contactos = await dbGetContactosByUsuario( user._id );
+        await revisarPerfilCompleto( user );
         res.json({ msg: 'Contactos de emergencia actualizados', contactos });
     }
     catch (error) {

@@ -9,6 +9,15 @@ const RUTAS_CAMBIO_CONTRASENA = [
     'PATCH /api/auth/cambiar-contrasena'
 ];
 
+// Perfil incompleto: solo podra usar su perfil, y sus notificaciones
+const permitidaSinPerfil = ( req ) => {
+    const ruta = rutaActual( req );
+    return ruta === 'POST /api/perfilusuario'
+        || RUTAS_CAMBIO_CONTRASENA.includes( ruta )
+        || ( req.baseUrl + req.path ).startsWith( '/api/perfilusuario/me' )
+        || req.baseUrl === '/api/notificaciones';
+};
+
 const authMiddleware = async (req, res, next) => {
     try {
         const token = req.header('X-Token');
@@ -43,6 +52,14 @@ const authMiddleware = async (req, res, next) => {
             return res.status(403).json({
                 msg: 'Debes cambiar tu contraseña antes de continuar',
                 codigo: 'CAMBIO_CONTRASENA_REQUERIDO'
+            });
+        }
+
+        // Cuenta nueva: hasta completar el perfil solo ve su perfil (y el dashboard sin datos)
+        if ( userFound.debeCompletarPerfil && ! permitidaSinPerfil( req ) ) {
+            return res.status(403).json({
+                msg: 'Debes completar tu perfil antes de continuar',
+                codigo: 'PERFIL_INCOMPLETO'
             });
         }
 

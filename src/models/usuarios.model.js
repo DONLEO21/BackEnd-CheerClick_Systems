@@ -74,6 +74,12 @@ const usuarioSchema = new Schema({
         type: Boolean,
         default: false
     },
+    // Cuenta nueva (aprobada o creada por el admin), solo puede usar su perfil
+    // hasta completar todos los datos
+    debeCompletarPerfil: {
+        type: Boolean,
+        default: false
+    },
     // Preferencias de comunicación
     preferencias: {
         notificaciones: { type: Boolean, default: true },

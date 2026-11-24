@@ -68,6 +68,7 @@ const createUsuario = async (req, res) => {
         usuario.codigo = await dbGenerarCodigo(usuario.rol);
         // La contraseña la eligió el admin, asi que el usuario debe cambiarla al ingresar
         usuario.debeCambiarContrasena = true;
+        usuario.debeCompletarPerfil = true;
 
         const nuevo = await dbCreateUsuario(usuario);
 
@@ -109,6 +110,7 @@ const updateUsuario = async (req, res) => {
         delete inputData.rol;
         delete inputData.status;
         delete inputData.debeCambiarContrasena;
+        delete inputData.debeCompletarPerfil;
 
         // Correo: en minúscula y sin repetir
         if (inputData.email) {

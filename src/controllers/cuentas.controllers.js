@@ -144,7 +144,8 @@ const aprobarSolicitud = async ( req, res ) => {
         const data = await dbUpdateUsuario( id, {
             estadoSolicitud: 'Aprobada',
             rol: rol,
-            codigo: await dbGenerarCodigo( rol )
+            codigo: await dbGenerarCodigo( rol ),
+            debeCompletarPerfil: true
         });
 
         // Si el correo falla, la aprobación igual queda guardada
