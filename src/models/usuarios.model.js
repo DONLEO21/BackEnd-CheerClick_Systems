@@ -96,7 +96,18 @@ const usuarioSchema = new Schema({
 },
 //Opciones del esquema
 {
-    timestamps: true
+    timestamps: true,
+    // Incluye los campos virtuales (iniciales) al responder
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true },
+    id: false
+});
+
+// Iniciales para el cuando no hay foto de perfil (primera letra del nombre  y del apellido )
+usuarioSchema.virtual('iniciales').get(function () {
+    const n = this.nombre?.trim()[0] ?? '';
+    const a = this.apellido?.trim()[0] ?? '';
+    return (n + a).toUpperCase();
 });
 
 // Parte 2: Definir el modelo. Dicho modelo esta atado al nombre de documento
