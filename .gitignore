@@ -156,3 +156,7 @@ vite.config.ts.timestamp-*
 /bruno/Sample API Collection/environments/Desarrollo.yml
 
 /uploads
+# Archivos locales que no deben versionarse
+/bruno/Sample API Collection/environments/X-token.yml
+.claude/
+CLAUDE.md
